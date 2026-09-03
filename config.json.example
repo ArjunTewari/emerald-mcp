@@ -3,5 +3,50 @@
   "APIDIRECT_KEY":  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
   "YOUTUBE_KEY":    "AIzaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
   "PERPLEXITY_KEY": "pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "OPENAI_KEY":     "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "OPENAI_KEY":     "",
+
+  "ORG_HANDLES": {
+    "CEEW": {
+      "linkedin":  "council-on-energy-environment-and-water",
+      "twitter":   "CEEWIndia",
+      "instagram": "ceewindia",
+      "youtube":   "CEEWIndia"
+    },
+    "WRI India": {
+      "linkedin":  "wri-india",
+      "twitter":   "WRIIndia",
+      "instagram": "wriindia",
+      "youtube":   "WRIIndia"
+    },
+    "CSE India": {
+      "linkedin":  "centre-for-science-and-environment",
+      "twitter":   "CSEIndia",
+      "instagram": "cseindia",
+      "youtube":   "CSEIndia"
+    },
+    "Prakriti Foundation": {
+      "linkedin":  "prakriti-foundation",
+      "twitter":   "PrakritiFound",
+      "instagram": "prakritifoundation",
+      "youtube":   ""
+    },
+    "TERI": {
+      "linkedin":  "the-energy-and-resources-institute-teri",
+      "twitter":   "TERIIndia",
+      "instagram": "teriindia",
+      "youtube":   "TERIIndia"
+    },
+    "Respirer Living Sciences": {
+      "linkedin":  "respirer-living-sciences",
+      "twitter":   "RepirerLiving",
+      "instagram": "respirerliving",
+      "youtube":   ""
+    },
+    "Clean Air Fund": {
+      "linkedin":  "clean-air-fund",
+      "twitter":   "CleanAirFund",
+      "instagram": "cleanairfund",
+      "youtube":   "CleanAirFund"
+    }
+  }
 }
