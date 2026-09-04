@@ -32687,6 +32687,10 @@ function loadConfig() {
   }
   return f;
 }
+function saveConfig(data) {
+  const p = path.join(__dirname, "config.json");
+  fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf8");
+}
 function cfg() {
   const f = loadConfig();
   return {
@@ -33896,6 +33900,91 @@ server.tool(
 Organisations: ${data.orgs.map((o) => o.name).join(", ")}
 Period: ${data.date_from} \u2014 ${data.date_to}
 Open with: open_report` }] };
+  }
+);
+server.tool(
+  "list_org_handles",
+  "List all configured social media handles for every organisation. Returns the full ORG_HANDLES map from config.json.",
+  {},
+  async () => {
+    const f = loadConfig();
+    const handles = f.ORG_HANDLES ?? {};
+    const count = Object.keys(handles).length;
+    if (!count) return { content: [{ type: "text", text: "No org handles configured yet. Use set_org_handles to add some." }] };
+    const lines = Object.entries(handles).map(([org, h]) => {
+      const parts = [
+        h.linkedin ? `LI:${h.linkedin}` : "LI:\u2014",
+        h.twitter ? `X:${h.twitter}` : "X:\u2014",
+        h.instagram ? `IG:${h.instagram}` : "IG:\u2014",
+        h.youtube ? `YT:${h.youtube}` : "YT:\u2014"
+      ];
+      return `\u2022 ${org}
+  ${parts.join("  ")}`;
+    });
+    return { content: [{ type: "text", text: `${count} orgs configured:
+
+${lines.join("\n")}` }] };
+  }
+);
+server.tool(
+  "set_org_handles",
+  `Add or update social media handles for one organisation in config.json.
+   Pass only the fields you want to set \u2014 omitted fields are left unchanged.
+   Use an empty string "" to clear a handle.`,
+  {
+    org_name: external_exports.string().describe('Organisation name, e.g. "Greenpeace India"'),
+    linkedin: external_exports.string().optional().describe('LinkedIn company slug, e.g. "greenpeace-india"'),
+    twitter: external_exports.string().optional().describe('X/Twitter handle without @, e.g. "GreenpeaceIndia"'),
+    instagram: external_exports.string().optional().describe('Instagram username, e.g. "greenpeaceindia"'),
+    youtube: external_exports.string().optional().describe('YouTube channel ID (UC\u2026) or handle, e.g. "UCxxxxxx"')
+  },
+  async ({ org_name, linkedin, twitter, instagram, youtube }) => {
+    const f = loadConfig();
+    const handles = f.ORG_HANDLES ?? {};
+    const existing = handles[org_name] ?? {};
+    const updated = {
+      linkedin: linkedin !== void 0 ? linkedin : existing.linkedin,
+      twitter: twitter !== void 0 ? twitter : existing.twitter,
+      instagram: instagram !== void 0 ? instagram : existing.instagram,
+      youtube: youtube !== void 0 ? youtube : existing.youtube
+    };
+    handles[org_name] = updated;
+    f.ORG_HANDLES = handles;
+    try {
+      saveConfig(f);
+    } catch (e) {
+      return { content: [{ type: "text", text: `ERROR saving config: ${e.message}` }], isError: true };
+    }
+    const parts = [
+      `LI: ${updated.linkedin || "\u2014"}`,
+      `X:  ${updated.twitter || "\u2014"}`,
+      `IG: ${updated.instagram || "\u2014"}`,
+      `YT: ${updated.youtube || "\u2014"}`
+    ];
+    return { content: [{ type: "text", text: `Saved handles for "${org_name}":
+${parts.join("\n")}` }] };
+  }
+);
+server.tool(
+  "remove_org_handle",
+  "Remove an organisation's social media handles entirely from config.json.",
+  {
+    org_name: external_exports.string().describe("Exact organisation name to remove")
+  },
+  async ({ org_name }) => {
+    const f = loadConfig();
+    const handles = f.ORG_HANDLES ?? {};
+    if (!(org_name in handles)) {
+      return { content: [{ type: "text", text: `"${org_name}" not found in ORG_HANDLES. Use list_org_handles to see configured orgs.` }] };
+    }
+    delete handles[org_name];
+    f.ORG_HANDLES = handles;
+    try {
+      saveConfig(f);
+    } catch (e) {
+      return { content: [{ type: "text", text: `ERROR saving config: ${e.message}` }], isError: true };
+    }
+    return { content: [{ type: "text", text: `Removed "${org_name}" from ORG_HANDLES. ${Object.keys(handles).length} orgs remain.` }] };
   }
 );
 server.tool(
