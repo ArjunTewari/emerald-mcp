@@ -3,8 +3,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const KNOWN_ORGS = [
-  "CEEW", "WRI India", "CSE India", "Prakriti Foundation",
-  "TERI", "Respirer Living Sciences", "Clean Air Fund",
+  "WRI India",
+  "Air Pollution Action Group",
+  "Chintan Environmental Research and Action Group",
+  "IIT Kanpur",
+  "CSTEP",
+  "IIT Delhi",
+  "Health Effects Institute",
+  "ICCT",
+  "EPIC India",
+  "Council on Energy, Environment and Water",
+  "Centre for Science and Environment",
+  "Climate Trends",
+  "Sustainable Futures Collaborative",
+  "EnviroCatalysts",
+  "Raahgiri Foundation",
+  "TERI",
 ];
 
 export default function Home() {
@@ -127,8 +141,9 @@ export default function Home() {
         </button>
       </form>
 
-      <div style={{ marginTop: 32, textAlign: "center" }}>
+      <div style={{ marginTop: 32, textAlign: "center", display: "flex", gap: 24, justifyContent: "center" }}>
         <a href="/reports" style={{ color: "var(--muted)", fontSize: 13 }}>View past reports</a>
+        <a href="/handles" style={{ color: "var(--muted)", fontSize: 13 }}>Manage org handles</a>
       </div>
     </div>
   );
