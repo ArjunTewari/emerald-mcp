@@ -1,0 +1,95 @@
+name: Generate Emerald Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      orgs:
+        description: 'Org names (comma-separated, e.g. "CEEW, WRI India")'
+        required: true
+      date_from:
+        description: 'Start date (YYYY-MM-DD)'
+        required: true
+      date_to:
+        description: 'End date (YYYY-MM-DD)'
+        required: true
+      client:
+        description: 'Client name'
+        required: false
+        default: 'Client'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Write config.json
+        env:
+          FIRECRAWL_KEY:  ${{ secrets.FIRECRAWL_KEY }}
+          APIDIRECT_KEY:  ${{ secrets.APIDIRECT_KEY }}
+          YOUTUBE_KEY:    ${{ secrets.YOUTUBE_KEY }}
+          PERPLEXITY_KEY: ${{ secrets.PERPLEXITY_KEY }}
+          OPENAI_KEY:     ${{ secrets.OPENAI_KEY }}
+        run: |
+          node -e "
+          const cfg = {
+            FIRECRAWL_KEY:  process.env.FIRECRAWL_KEY,
+            APIDIRECT_KEY:  process.env.APIDIRECT_KEY,
+            YOUTUBE_KEY:    process.env.YOUTUBE_KEY,
+            PERPLEXITY_KEY: process.env.PERPLEXITY_KEY,
+            OPENAI_KEY:     process.env.OPENAI_KEY,
+            ORG_HANDLES: {
+              'CEEW':      { linkedin: 'council-on-energy-environment-and-water', twitter: 'CEEWIndia', instagram: 'ceewindia', youtube: 'CEEWIndia' },
+              'WRI India': { linkedin: 'wri-india', twitter: 'WRIIndia', instagram: 'wriindia', youtube: 'WRIIndia' },
+              'CSE India': { linkedin: 'centre-for-science-and-environment', twitter: 'CSEIndia', instagram: 'cseindia', youtube: 'CSEIndia' },
+              'Prakriti Foundation': { linkedin: 'prakriti-foundation', twitter: 'PrakritiFound', instagram: 'prakritifoundation', youtube: '' },
+              'TERI':      { linkedin: 'the-energy-and-resources-institute-teri', twitter: 'TERIIndia', instagram: 'teriindia', youtube: 'TERIIndia' },
+              'Respirer Living Sciences': { linkedin: 'respirer-living-sciences', twitter: 'RepirerLiving', instagram: 'respirerliving', youtube: '' },
+              'Clean Air Fund': { linkedin: 'clean-air-fund', twitter: 'CleanAirFund', instagram: 'cleanairfund', youtube: 'CleanAirFund' }
+            }
+          };
+          require('fs').writeFileSync('config.json', JSON.stringify(cfg, null, 2));
+          console.log('config.json written');
+          "
+
+      - name: Configure MCP server
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: claude mcp add emerald-ai-agentic node "$(pwd)/mcp-agentic.mjs"
+
+      - name: Generate report
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REPORTS_DIR: ${{ github.workspace }}/reports
+        run: |
+          mkdir -p reports
+          claude --dangerously-skip-permissions -p \
+            "Generate an Emerald AI report for ${{ github.event.inputs.orgs }} from ${{ github.event.inputs.date_from }} to ${{ github.event.inputs.date_to }}. Client: ${{ github.event.inputs.client }}."
+
+      - name: Commit and push report
+        run: |
+          git config user.name "Emerald AI"
+          git config user.email "arjuntewari0505@gmail.com"
+          git add reports/
+          git diff --staged --quiet || (
+            git commit -m "report: ${{ github.event.inputs.orgs }} ${{ github.event.inputs.date_from }} to ${{ github.event.inputs.date_to }}"
+            git push
+          )
+
+      - name: Upload report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: emerald-report
+          path: reports/*.html
+          if-no-files-found: warn

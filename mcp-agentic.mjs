@@ -47862,7 +47862,7 @@ function resolveDesktop() {
     }
   }) ?? candidates[1];
 }
-var REPORTS_DIR = path.join(resolveDesktop(), "Emerald Reports");
+var REPORTS_DIR = process.env.REPORTS_DIR ?? path.join(resolveDesktop(), "Emerald Reports");
 var OUT_DIR = REPORTS_DIR;
 var HISTORY_DIR = path.join(__dirname, "history");
 [OUT_DIR, HISTORY_DIR].forEach((d) => {

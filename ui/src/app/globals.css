@@ -1,0 +1,27 @@
+:root {
+  --bg:      #0f1923;
+  --surface: #162230;
+  --border:  #1e3245;
+  --text:    #c8d8e8;
+  --muted:   #5a7a9a;
+  --emerald: #7ecfb3;
+  --emerald2:#4a9e83;
+  --white:   #eef4fb;
+  --amber:   #c9922a;
+  --red:     #e05c5c;
+  --green:   #4caf74;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--emerald); text-decoration: none; }
+a:hover { text-decoration: underline; }
