@@ -6,23 +6,107 @@
   "OPENAI_KEY":     "",
 
   "ORG_HANDLES": {
+    "WRI India": {
+      "linkedin":  "wri-india",
+      "twitter":   "wriindia",
+      "instagram": "wriindia",
+      "youtube":   "UCYoSZhQQR6Pc9lFJjR5e18g"
+    },
+    "Air Pollution Action Group": {
+      "linkedin":  "apag",
+      "twitter":   "APAGIndia",
+      "instagram": "apagindia",
+      "youtube":   "UCj2uQfsw-u7yrp6WStsgZoQ"
+    },
+    "Chintan Environmental Research and Action Group": {
+      "linkedin":  "chintan-environmental-research-and-actiann-group-",
+      "twitter":   "chintanindia",
+      "instagram": "chintan.india",
+      "youtube":   "UCg-HN_sFTRBNDDOWxEt138g"
+    },
+    "IIT Kanpur": {
+      "linkedin":  "indian-institute-of-technology-kanpur",
+      "twitter":   "IITKanpur",
+      "instagram": "iitkanpur",
+      "youtube":   "UCIdajcgyfqnD9PwDnv_xqmg"
+    },
+    "CSTEP": {
+      "linkedin":  "cstep",
+      "twitter":   "CSTEP_India",
+      "instagram": "cstep_ind",
+      "youtube":   "UCROj7dD9PqkZj4My5En829A"
+    },
+    "IIT Delhi": {
+      "linkedin":  "iitdelhi",
+      "twitter":   "iitdelhi",
+      "instagram": "iitdelhi",
+      "youtube":   "UCJX9RwRoVAEFLWlhrNF3Lqg"
+    },
+    "Health Effects Institute": {
+      "linkedin":  "health-effects-institute",
+      "twitter":   "",
+      "instagram": "healtheffectsinstitute",
+      "youtube":   "UCPli-nivc67QzWoW1nRumIw"
+    },
+    "ICCT": {
+      "linkedin":  "the-international-council-on-clean-transportation",
+      "twitter":   "theicct",
+      "instagram": "theicct",
+      "youtube":   "UCjbSjAMN6yiGhczNwSgTJ6Q"
+    },
+    "EPIC India": {
+      "linkedin":  "epic-india",
+      "twitter":   "EPIC_India",
+      "instagram": "epic_india",
+      "youtube":   "UCz-PtdD6pJSITzGt7q9gN8A"
+    },
+    "Council on Energy, Environment and Water": {
+      "linkedin":  "council-on-energy-environment-and-water",
+      "twitter":   "CEEWIndia",
+      "instagram": "ceewindia",
+      "youtube":   "UCNF-vGnm1jdA_jhrIpk84Tg"
+    },
     "CEEW": {
       "linkedin":  "council-on-energy-environment-and-water",
       "twitter":   "CEEWIndia",
       "instagram": "ceewindia",
-      "youtube":   "CEEWIndia"
+      "youtube":   "UCNF-vGnm1jdA_jhrIpk84Tg"
     },
-    "WRI India": {
-      "linkedin":  "wri-india",
-      "twitter":   "WRIIndia",
-      "instagram": "wriindia",
-      "youtube":   "WRIIndia"
+    "Centre for Science and Environment": {
+      "linkedin":  "centre-for-science-and-environment-new-delhi",
+      "twitter":   "cseindia",
+      "instagram": "cseindia",
+      "youtube":   "UCPUL9ZjjcobQ6XlgTo6Mr2g"
     },
     "CSE India": {
-      "linkedin":  "centre-for-science-and-environment",
-      "twitter":   "CSEIndia",
+      "linkedin":  "centre-for-science-and-environment-new-delhi",
+      "twitter":   "cseindia",
       "instagram": "cseindia",
-      "youtube":   "CSEIndia"
+      "youtube":   "UCPUL9ZjjcobQ6XlgTo6Mr2g"
+    },
+    "Climate Trends": {
+      "linkedin":  "climatetrends",
+      "twitter":   "ClimateTrendsIN",
+      "instagram": "climatetrendsindia",
+      "youtube":   "UCed9gfyM-3SAGIAYpvSz8ig"
+    },
+    "Sustainable Futures Collaborative": {
+      "linkedin":  "sustainable-futures-collaborative",
+      "twitter":   "SFC_India",
+      "instagram": "sustainablefuturescollab",
+      "youtube":   "UCZcWNjwTwQK48D7z8oWAKCA"
+    },
+    "EnviroCatalysts": {
+      "linkedin":  "",
+      "twitter":   "",
+      "instagram": "",
+      "youtube":   ""
+    },
+    "Raahgiri Foundation": {
+      "linkedin":  "",
+      "twitter":   "",
+      "instagram": "raahgiri_fdn",
+      "youtube":   ""
     },
     "Prakriti Foundation": {
       "linkedin":  "prakriti-foundation",
