@@ -48226,123 +48226,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
     </div>
   </div>
 
-  <!-- SCORECARD / OVERALL RANKING TABLE -->
-  <!-- Section label: "Section 07 \xB7 {DATE_FROM} \u2192 {DATE_TO}" (full) / "Section 06" (client) -->
-  <div class="section">
-    <div class="section-title">Scorecard</div>
-    <div class="section-desc">Share of voice across Press, LLM, and Social. Each channel is normalised to its own cohort share so all three carry equal weight; the Overall SoV is their average, and orgs are ranked by it. Click any row to see the breakdown.</div>
-
-    <!-- 4 summary score cards (keep for single-org reports; omit for multi-org) -->
-    <div class="scc">
-      <div class="sca">
-        <div class="scn">Social Score</div>
-        <div class="scg">{SOCIAL_SCORE}</div>
-        <div style="font-family:monospace;font-size:15px;color:var(--muted)">/ 100</div>
-        <div style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:6px">LI {LI_COMP} \xB7 X {X_COMP} \xB7 IG {IG_COMP} \xB7 YT {YT_COMP}</div>
-      </div>
-      <div class="sca">
-        <div class="scn">Media Score</div>
-        <div class="scg">{MEDIA_SCORE}</div>
-        <div style="font-family:monospace;font-size:15px;color:var(--muted)">/ 100</div>
-        <div style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:6px">{ONLINE} online \xB7 {PRINT} print \xB7 {TV} TV</div>
-      </div>
-      <div class="sca">
-        <div class="scn">AEO Score</div>
-        <div class="scg">{AEO_SCORE}</div>
-        <div style="font-family:monospace;font-size:15px;color:var(--muted)">/ 100</div>
-        <div style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:6px">{AI_MENTIONS} AI citations</div>
-      </div>
-      <div class="sca" style="border-color:var(--amber)">
-        <div class="scn" style="color:var(--amber)">Overall Score</div>
-        <div class="scg" style="color:var(--amber)">{OVERALL_SCORE}</div>
-        <div style="font-family:monospace;font-size:15px;color:var(--muted)">SoV: {SOV_PCT}%</div>
-        <div style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:6px">Rank {RANK} of {TOTAL_ORGS}</div>
-      </div>
-    </div>
-
-    <!-- Scorecard table: one row per org + expandable breakdown -->
-    <table class="nt">
-      <thead>
-        <tr>
-          <th>RANK</th>
-          <th>ORGANISATION</th>
-          <th>PRESS SOV</th>
-          <th>LLM SOV</th>
-          <th>SOCIAL SOV</th>
-          <th style="color:var(--amber)">OVERALL SOV</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- One row per org, sorted by Overall SOV descending.
-             COHORT row first (amber bold) if multi-org.
-             Each org row is clickable and toggles the breakdown row below it.
-
-             Org row pattern:
-             <tr style="cursor:pointer" onclick="var b=document.getElementById('{ORG_ID}-bd');b.style.display=(b.style.display==='none'?'table-row':'none')">
-               <td style="font-family:monospace;color:var(--muted)">{RANK}st/nd/rd/th</td>
-               <td style="font-family:monospace;font-weight:700;color:{ORG_COLOR}">{ORG_NAME}</td>
-               <td>
-                 <div style="font-family:monospace;font-weight:700;color:var(--text)">{PRESS_SOV}%</div>
-                 <div style="font-family:monospace;font-size:14px;color:var(--muted)">{PRESS_RAW}</div>
-               </td>
-               <td>
-                 <div style="font-family:monospace;font-weight:700;color:var(--text)">{LLM_SOV}%</div>
-                 <div style="font-family:monospace;font-size:14px;color:var(--muted)">{LLM_RAW}</div>
-               </td>
-               <td>
-                 <div style="font-family:monospace;font-weight:700;color:var(--text)">{SOCIAL_SOV}%</div>
-                 <div style="font-family:monospace;font-size:14px;color:var(--muted)">{SOCIAL_RAW}/10</div>
-               </td>
-               <td style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--amber)">{OVERALL_SOV}%</td>
-             </tr>
-
-             Breakdown row (hidden by default):
-             <tr id="{ORG_ID}-bd" style="display:none">
-               <td colspan="6" style="padding:0">
-                 <div style="background:rgba(201,146,42,.06);border-top:1px solid rgba(201,146,42,.2);padding:20px 24px">
-                   <div style="font-family:monospace;font-size:12px;font-weight:700;letter-spacing:.8px;color:var(--amber);margin-bottom:10px">{ORG_NAME_UPPER} \u2014 SCORE BREAKDOWN</div>
-                   <div style="font-family:monospace;font-size:14px;color:var(--muted2);margin-bottom:16px">
-                     ({PRESS_SOV}% + {LLM_SOV}% + {SOCIAL_SOV}%) / 3 = <strong style="color:var(--amber);font-size:18px">{OVERALL_SOV}%</strong>
-                   </div>
-                   <div style="display:flex;gap:12px;flex-wrap:wrap">
-                     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;flex:1;min-width:180px">
-                       <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">PRESS</div>
-                       <div style="font-family:monospace;font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:12px">Press score (articles \xD7 2.5) as a share of all orgs' press \u2014 equal-weighted</div>
-                       <div style="font-family:monospace;font-size:17px;font-weight:700;color:var(--good)">{PRESS_RAW} \u2192 {PRESS_SOV}%</div>
-                     </div>
-                     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;flex:1;min-width:180px">
-                       <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">LLM</div>
-                       <div style="font-family:monospace;font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:12px">LLM mentions (max 45: 15 questions \xD7 3 LLMs) as a share of all orgs' mentions</div>
-                       <div style="font-family:monospace;font-size:17px;font-weight:700;color:var(--good)">{LLM_RAW} \u2192 {LLM_SOV}%</div>
-                     </div>
-                     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;flex:1;min-width:180px">
-                       <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">SOCIAL</div>
-                       <div style="font-family:monospace;font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:12px">Social presence (0\u201310) as a share of all orgs' presence \u2014 normalised to match</div>
-                       <div style="font-family:monospace;font-size:17px;font-weight:700;color:var(--good)">{SOCIAL_RAW}/10 \u2192 {SOCIAL_SOV}%</div>
-                     </div>
-                   </div>
-                 </div>
-               </td>
-             </tr>
-        -->
-      </tbody>
-    </table>
-    <p style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:10px">
-      Single-org report \u2014 SoV% = 100% by definition. Benchmark against a multi-org cohort to determine competitive standing.
-    </p>
-    <div class="scf"><strong>Formula:</strong> Overall = (Social\xD70.4) + (Press\xD70.4) + (LLM\xD70.2) \xB7 LI: min((posts\xD73)+(ER%\xD710),40) \xB7 X: min((posts\xD71.5)+(ER%\xD75),20) \xB7 IG: min((posts\xD72)+(ER%\xD78),20) \xB7 YT: min((videos\xD72)+(subs\xF75000),20)</div>
-  </div>
-
-  <!-- AEO / AI VISIBILITY -->
-  <div class="section">
-    <div class="section-title">AEO \u2014 AI Engine Visibility</div>
-    <div class="section-desc">How often each organisation is cited when AI tools (Perplexity, ChatGPT) answer air quality questions.</div>
-    <table class="data-table">
-      <thead><tr><th>Organisation</th><th>AI Mentions</th><th>AEO Score</th><th>Notable AI Citations</th></tr></thead>
-      <tbody><!-- one row per org --></tbody>
-    </table>
-  </div>
-
   <!-- SECTION 02A \u2014 PRESS ANALYTICS (Print / Online) -->
   <div class="section">
     <div class="section-title">Press Analytics</div>
@@ -48460,7 +48343,21 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
     </div>
   </div>
 
-  <!-- SECTION 04 \u2014 CITATIONS -->
+  <!-- SECTION 04 \u2014 EMERGING NARRATIVES -->
+  <div class="section">
+    <div class="section-title">Emerging Narratives</div>
+    <div class="section-desc">AQ narrative topics with measurable media traction where none of the tracked organisations published coverage \u2014 identified by fetching general AQ news without org filters, removing articles that mention a tracked org, then clustering the remainder. Gap signal = evidence of the absence.</div>
+    <!-- "N EMERGING NARRATIVES IDENTIFIED" counter + collapse/expand button.
+         Each .emerging-card contains:
+           - topic name (bold)
+           - description paragraph
+           - "ABSENT:" label + org chips (one chip per org not covering this narrative,
+             each chip in that org's brand color, font-family monospace)
+         Only include narratives where NO tracked org published on the topic.
+         Do NOT include topics that any tracked org's articles cover. -->
+  </div>
+
+  <!-- SECTION 05 \u2014 CITATIONS -->
   <div class="section">
     <div class="section-title">Citations</div>
     <div class="section-desc">All indexed articles from tracked outlets. Verify any claim by following the URL.</div>
@@ -48474,8 +48371,18 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
          URL: amber "link" text linking to the article -->
   </div>
 
+  <!-- SECTION 06 \u2014 AEO / AI VISIBILITY -->
+  <div class="section">
+    <div class="section-title">AEO \u2014 AI Engine Visibility</div>
+    <div class="section-desc">How often each organisation is cited when AI tools (Perplexity, ChatGPT) answer air quality questions.</div>
+    <table class="data-table">
+      <thead><tr><th>Organisation</th><th>AI Mentions</th><th>AEO Score</th><th>Notable AI Citations</th></tr></thead>
+      <tbody><!-- one row per org --></tbody>
+    </table>
+  </div>
+
   <!-- SOCIAL MEDIA PRESENCE -->
-  <!-- Section label: "Section 05 \xB7 {DATE_FROM} \u2192 {DATE_TO}" (full) / "Section 04" (client) -->
+  <!-- Section label: "Section 07 \xB7 {DATE_FROM} \u2192 {DATE_TO}" (full) / "Section 06" (client) -->
   <div class="section">
     <div class="section-title">Social Media Presence</div>
     <div class="section-desc">Shows how active each organisation is on social media during the report period \u2014 how many followers they have, how often they post about air quality, and how much engagement that content receives across LinkedIn, X/Twitter, Instagram, and YouTube.</div>
@@ -48547,18 +48454,111 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
     -->
   </div>
 
-  <!-- EMERGING NARRATIVES -->
+  <!-- SCORECARD / OVERALL RANKING TABLE -->
+  <!-- Section label: "Section 08 \xB7 {DATE_FROM} \u2192 {DATE_TO}" (full) / "Section 07" (client) -->
   <div class="section">
-    <div class="section-title">Emerging Narratives</div>
-    <div class="section-desc">AQ narrative topics with measurable media traction where none of the tracked organisations published coverage \u2014 identified by fetching general AQ news without org filters, removing articles that mention a tracked org, then clustering the remainder. Gap signal = evidence of the absence.</div>
-    <!-- "N EMERGING NARRATIVES IDENTIFIED" counter + collapse/expand button.
-         Each .emerging-card contains:
-           - topic name (bold)
-           - description paragraph
-           - "ABSENT:" label + org chips (one chip per org not covering this narrative,
-             each chip in that org's brand color, font-family monospace)
-         Only include narratives where NO tracked org published on the topic.
-         Do NOT include topics that any tracked org's articles cover. -->
+    <div class="section-title">Scorecard</div>
+    <div class="section-desc">Share of voice across Press, LLM, and Social. Each channel is normalised to its own cohort share so all three carry equal weight; the Overall SoV is their average, and orgs are ranked by it. Click any row to see the breakdown.</div>
+
+    <!-- 4 summary score cards (keep for single-org reports; omit for multi-org) -->
+    <div class="scc">
+      <div class="sca">
+        <div class="scn">Social Score</div>
+        <div class="scg">{SOCIAL_SCORE}</div>
+        <div style="font-family:monospace;font-size:15px;color:var(--muted)">/ 100</div>
+        <div style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:6px">LI {LI_COMP} \xB7 X {X_COMP} \xB7 IG {IG_COMP} \xB7 YT {YT_COMP}</div>
+      </div>
+      <div class="sca">
+        <div class="scn">Media Score</div>
+        <div class="scg">{MEDIA_SCORE}</div>
+        <div style="font-family:monospace;font-size:15px;color:var(--muted)">/ 100</div>
+        <div style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:6px">{ONLINE} online \xB7 {PRINT} print \xB7 {TV} TV</div>
+      </div>
+      <div class="sca">
+        <div class="scn">AEO Score</div>
+        <div class="scg">{AEO_SCORE}</div>
+        <div style="font-family:monospace;font-size:15px;color:var(--muted)">/ 100</div>
+        <div style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:6px">{AI_MENTIONS} AI citations</div>
+      </div>
+      <div class="sca" style="border-color:var(--amber)">
+        <div class="scn" style="color:var(--amber)">Overall Score</div>
+        <div class="scg" style="color:var(--amber)">{OVERALL_SCORE}</div>
+        <div style="font-family:monospace;font-size:15px;color:var(--muted)">SoV: {SOV_PCT}%</div>
+        <div style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:6px">Rank {RANK} of {TOTAL_ORGS}</div>
+      </div>
+    </div>
+
+    <!-- Scorecard table: one row per org + expandable breakdown -->
+    <table class="nt">
+      <thead>
+        <tr>
+          <th>RANK</th>
+          <th>ORGANISATION</th>
+          <th>PRESS SOV</th>
+          <th>LLM SOV</th>
+          <th>SOCIAL SOV</th>
+          <th style="color:var(--amber)">OVERALL SOV</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- One row per org, sorted by Overall SOV descending.
+             COHORT row first (amber bold) if multi-org.
+             Each org row is clickable and toggles the breakdown row below it.
+
+             Org row pattern:
+             <tr style="cursor:pointer" onclick="var b=document.getElementById('{ORG_ID}-bd');b.style.display=(b.style.display==='none'?'table-row':'none')">
+               <td style="font-family:monospace;color:var(--muted)">{RANK}st/nd/rd/th</td>
+               <td style="font-family:monospace;font-weight:700;color:{ORG_COLOR}">{ORG_NAME}</td>
+               <td>
+                 <div style="font-family:monospace;font-weight:700;color:var(--text)">{PRESS_SOV}%</div>
+                 <div style="font-family:monospace;font-size:14px;color:var(--muted)">{PRESS_RAW}</div>
+               </td>
+               <td>
+                 <div style="font-family:monospace;font-weight:700;color:var(--text)">{LLM_SOV}%</div>
+                 <div style="font-family:monospace;font-size:14px;color:var(--muted)">{LLM_RAW}</div>
+               </td>
+               <td>
+                 <div style="font-family:monospace;font-weight:700;color:var(--text)">{SOCIAL_SOV}%</div>
+                 <div style="font-family:monospace;font-size:14px;color:var(--muted)">{SOCIAL_RAW}/10</div>
+               </td>
+               <td style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--amber)">{OVERALL_SOV}%</td>
+             </tr>
+
+             Breakdown row (hidden by default):
+             <tr id="{ORG_ID}-bd" style="display:none">
+               <td colspan="6" style="padding:0">
+                 <div style="background:rgba(201,146,42,.06);border-top:1px solid rgba(201,146,42,.2);padding:20px 24px">
+                   <div style="font-family:monospace;font-size:12px;font-weight:700;letter-spacing:.8px;color:var(--amber);margin-bottom:10px">{ORG_NAME_UPPER} \u2014 SCORE BREAKDOWN</div>
+                   <div style="font-family:monospace;font-size:14px;color:var(--muted2);margin-bottom:16px">
+                     ({PRESS_SOV}% + {LLM_SOV}% + {SOCIAL_SOV}%) / 3 = <strong style="color:var(--amber);font-size:18px">{OVERALL_SOV}%</strong>
+                   </div>
+                   <div style="display:flex;gap:12px;flex-wrap:wrap">
+                     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;flex:1;min-width:180px">
+                       <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">PRESS</div>
+                       <div style="font-family:monospace;font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:12px">Press score (articles \xD7 2.5) as a share of all orgs' press \u2014 equal-weighted</div>
+                       <div style="font-family:monospace;font-size:17px;font-weight:700;color:var(--good)">{PRESS_RAW} \u2192 {PRESS_SOV}%</div>
+                     </div>
+                     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;flex:1;min-width:180px">
+                       <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">LLM</div>
+                       <div style="font-family:monospace;font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:12px">LLM mentions (max 45: 15 questions \xD7 3 LLMs) as a share of all orgs' mentions</div>
+                       <div style="font-family:monospace;font-size:17px;font-weight:700;color:var(--good)">{LLM_RAW} \u2192 {LLM_SOV}%</div>
+                     </div>
+                     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;flex:1;min-width:180px">
+                       <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">SOCIAL</div>
+                       <div style="font-family:monospace;font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:12px">Social presence (0\u201310) as a share of all orgs' presence \u2014 normalised to match</div>
+                       <div style="font-family:monospace;font-size:17px;font-weight:700;color:var(--good)">{SOCIAL_RAW}/10 \u2192 {SOCIAL_SOV}%</div>
+                     </div>
+                   </div>
+                 </div>
+               </td>
+             </tr>
+        -->
+      </tbody>
+    </table>
+    <p style="font-family:monospace;font-size:14px;color:var(--muted);margin-top:10px">
+      Single-org report \u2014 SoV% = 100% by definition. Benchmark against a multi-org cohort to determine competitive standing.
+    </p>
+    <div class="scf"><strong>Formula:</strong> Overall = (Social\xD70.4) + (Press\xD70.4) + (LLM\xD70.2) \xB7 LI: min((posts\xD73)+(ER%\xD710),40) \xB7 X: min((posts\xD71.5)+(ER%\xD75),20) \xB7 IG: min((posts\xD72)+(ER%\xD78),20) \xB7 YT: min((videos\xD72)+(subs\xF75000),20)</div>
   </div>
 
   <!-- ACTION MATRIX -->
@@ -48604,7 +48604,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
 
 ## WHAT "ALWAYS SAME TEMPLATE" MEANS
 - CSS variables: never change. Colors, fonts, spacing stay identical.
-- Section order: always Header \u2192 Exec Summary \u2192 Ranking \u2192 AEO \u2192 Press (02A Print/Online \u2192 02B TV \u2192 02C Momentum) \u2192 Topic Ownership Map (03) \u2192 Citations (04) \u2192 Social \u2192 Emerging Narratives \u2192 Action Matrix \u2192 Org Details \u2192 Footer.
+- Section order: always Header \u2192 Exec Summary (01) \u2192 Press (02A Print/Online \u2192 02B TV \u2192 02C Momentum) \u2192 Topic Ownership Map (03) \u2192 Emerging Narratives (04) \u2192 Citations (05) \u2192 AEO (06) \u2192 Social (07) \u2192 Scorecard/Ranking (08) \u2192 Action Matrix \u2192 Org Details \u2192 Footer.
 - Table columns: always in the order shown above.
 - Do NOT add new sections, sidebars, or change the layout.
 - You MAY add rows, fill cells, write summaries \u2014 that is your job.
