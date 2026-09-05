@@ -21799,22 +21799,28 @@ function buildHTML(data) {
     </div>`;
   }
   const tvMatrices = `${tvMatrix(TV_ENG_OUTLETS, "English TV")}${tvMatrix(TV_HIN_OUTLETS, "Hindi TV")}`;
+  const momentumByOrg = orgs.map((org) => {
+    const weekly = Object.fromEntries(weeks.map((week) => [week, []]));
+    for (const article of org.articles.filter((item) => item.type !== "tv")) {
+      const week = weekKey(article.date);
+      if (weekly[week]) weekly[week].push(article);
+    }
+    return { weekly, total: Object.values(weekly).reduce((sum, articles) => sum + articles.length, 0) };
+  });
+  const momentumOrder = orgs.map((_, i) => i).sort((a, b) => momentumByOrg[b].total - momentumByOrg[a].total || orgNames[a].localeCompare(orgNames[b]));
+  const momentumWeeklyTotals = Object.fromEntries(weeks.map((week) => [week, momentumByOrg.reduce((sum, item) => sum + item.weekly[week].length, 0)]));
+  const momentumTotal = momentumByOrg.reduce((sum, item) => sum + item.total, 0);
+  function momentumOrgCell(articles, orgIdx) {
+    if (!articles.length) return `<td class="momentum-week-cell"><span class="momentum-zero">·</span></td>`;
+    return `<td class="momentum-week-cell"><div class="momentum-cell-content"><span class="momentum-heat" style="color:${orgHex(orgIdx)}">${articles.length}</span>${pressSourcesBelow(articles)}</div></td>`;
+  }
   function momentumRows() {
-    return sorted.map((i) => {
-      const wc = {};
-      for (const w of weeks) wc[w] = [];
-      for (const a of orgs[i].articles.filter((a2) => a2.type !== "tv")) {
-        const wk = weekKey(a.date);
-        if (wc[wk]) wc[wk].push(a);
-      }
-      const cells = weeks.map((w) => {
-        const arts = wc[w];
-        if (!arts.length) return `<td class="mom-cell">${pressCountWithSources(arts)}</td>`;
-        return `<td class="mom-cell amber-cell">${pressCountWithSources(arts)}</td>`;
-      }).join("");
-      return `<tr><td style="color:${orgHex(i)};font-weight:600">${hEsc(orgNames[i])}</td>${cells}</tr>`;
+    return momentumOrder.map((i) => {
+      const cells = weeks.map((week) => momentumOrgCell(momentumByOrg[i].weekly[week], i)).join("");
+      return `<tr><td class="momentum-org" style="color:${orgHex(i)}">${hEsc(orgNames[i])}</td><td class="momentum-total" style="color:${orgHex(i)}">${momentumByOrg[i].total}</td>${cells}</tr>`;
     }).join("");
   }
+  const momentumAggregateCells = weeks.map((week) => `<td class="momentum-week-cell momentum-aggregate-count">${momentumWeeklyTotals[week] || `<span class="momentum-zero">·</span>`}</td>`).join("");
   function aeoRows() {
     return sorted.map((i) => {
       const mList = orgs[i].aeo_mentions;
@@ -21887,7 +21893,7 @@ function buildHTML(data) {
       </div>`).join("") : `<div style="color:var(--text-muted);padding:24px">No emerging narratives identified.</div>`;
   const aeoQRef = AEO_QUESTIONS.map((q, i) => `<div class="aeo-q"><span class="aeo-qn">Q${i + 1}</span>${hEsc(q)}</div>`).join("");
   const costLine = data.monthly_cost_inr ? `<div class="cost-line">Report generation cost: \u20B9${data.monthly_cost_inr.toLocaleString("en-IN")}</div>` : "";
-  const tgCols = `200px${orgs.map(() => " 1fr").join("")}`;
+  const tgCols = `250px${orgs.map(() => " 1fr").join("")}`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21900,33 +21906,33 @@ function buildHTML(data) {
 <style>
 :root{--ink:#0a0e17;--surface:#111520;--surface2:#181e2e;--surface3:#1e2638;--border:#252d40;--text:#d8e4f0;--text-muted:#6a7f99;--amber:#c9922a;--good:#4caf74;--warn:#d4a017;--bad:#e05c5c;--blue:#3d8ef0;--pink:#e05c9c;}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--ink);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:19px;line-height:1.6}
+body{background:var(--ink);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:20px;line-height:1.65}
 a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
 .shell{display:flex;min-height:100vh}
 .sidenav{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;padding:24px 0}
 .sidenav-logo{font-family:'DM Serif Display',serif;font-size:22px;color:var(--amber);padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
 .sidenav-logo span{display:block;font-family:'Inter',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
-.nav-a{display:block;padding:8px 20px;font-size:13px;font-weight:500;color:var(--text-muted);border-left:3px solid transparent;transition:all .15s}
+.nav-a{display:block;padding:8px 20px;font-size:14px;font-weight:500;color:var(--text-muted);border-left:3px solid transparent;transition:all .15s}
 .nav-a:hover,.nav-a.active{color:var(--text);border-left-color:var(--amber);background:var(--surface2)}
-.nav-org{font-size:12px;padding:6px 20px}
-.nav-section-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);padding:16px 20px 6px;opacity:.7}
+.nav-org{font-size:13px;padding:6px 20px}
+.nav-section-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);padding:16px 20px 6px;opacity:.7}
 .main{flex:1;min-width:0;padding:40px 48px}
 .report-header{margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid var(--border)}
-.report-client{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
-.report-title{font-family:'DM Serif Display',serif;font-size:47px;line-height:1.1;color:var(--text);margin-bottom:12px}
+.report-client{font-size:14px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
+.report-title{font-family:'DM Serif Display',serif;font-size:50px;line-height:1.1;color:var(--text);margin-bottom:12px}
 .report-meta{display:flex;gap:32px;flex-wrap:wrap;margin-top:16px}
 .meta-item{display:flex;flex-direction:column}
-.meta-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
-.meta-val{font-size:15px;font-weight:600;color:var(--text);margin-top:2px}
+.meta-label{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
+.meta-val{font-size:17px;font-weight:600;color:var(--text);margin-top:2px}
 .org-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:14px;font-weight:600}
 .section{margin-bottom:64px}
-.section-num{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px}
-.section-title{font-family:'DM Serif Display',serif;font-size:33px;color:var(--text);margin-bottom:6px}
-.section-desc{font-size:14px;color:var(--text-muted);margin-bottom:24px}
-.data-table{width:100%;border-collapse:collapse;font-size:14px}
-.data-table th{background:var(--surface2);color:var(--text-muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)}
-.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.section-num{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+.section-title{font-family:'DM Serif Display',serif;font-size:40px;line-height:1.2;color:var(--text);margin-bottom:8px}
+.section-desc{font-size:18px;color:var(--text-muted);margin-bottom:26px;max-width:880px}
+.data-table{width:100%;border-collapse:collapse;font-size:16px}
+.data-table th{background:var(--surface2);color:var(--text-muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;padding:13px 16px;text-align:left;border-bottom:2px solid var(--border)}
+.data-table td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:top}
 .data-table tr:hover td{background:rgba(201,146,42,.04)}
 .cohort-row td{color:var(--amber);font-weight:700;background:var(--surface2)}
 .inner-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
@@ -21946,38 +21952,55 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
 .sov-legend-item{display:flex;align-items:center;gap:6px;font-size:12px}
 .tv-heading-rule{width:40px;height:2px;background:var(--amber);margin:-10px 0 30px}
 .tv-matrix-section{margin-bottom:34px}
-.tv-matrix-title{color:var(--text-muted);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.tv-matrix-title{color:var(--text-muted);font-size:17px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
 .tv-matrix-wrap{overflow-x:auto}
 .tv-matrix{min-width:800px}
 .tv-matrix th:first-child,.tv-matrix td:first-child{min-width:340px}
 .tv-matrix th:not(:first-child),.tv-matrix td:not(:first-child){min-width:150px}
-.mom-cell{text-align:center;font-size:13px;position:relative}
-.amber-cell{color:var(--amber);font-weight:700}.amber-cell:hover{background:rgba(201,146,42,.08)}
 .press-count-with-sources{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:112px}
 .press-count-number{color:var(--text);font-weight:700;line-height:1.2}
 .press-sources-details{margin-top:5px;max-width:260px}
 .press-sources-details summary{list-style:none}.press-sources-details summary::-webkit-details-marker{display:none}
 .press-sources-below{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:5px}
-.press-sources-label{color:var(--text-muted);font-family:monospace;font-size:11px;font-weight:500;letter-spacing:.02em;white-space:nowrap;cursor:pointer;user-select:none}
+.press-sources-label{color:var(--text-muted);font-family:monospace;font-size:13px;font-weight:500;letter-spacing:.02em;white-space:nowrap;cursor:pointer;user-select:none}
 .press-sources-label:hover,.press-sources-details[open] .press-sources-label{color:var(--amber)}
-.press-source-link{display:block;color:var(--amber);font-size:11px;font-weight:500;line-height:1.35;overflow-wrap:anywhere;text-align:left}
+.press-source-link{display:block;color:var(--amber);font-size:13px;font-weight:500;line-height:1.4;overflow-wrap:anywhere;text-align:left}
 .press-source-text{color:var(--text-muted)}
-.mom-cell .press-count-with-sources{align-items:center;min-width:120px}
-.mom-cell .press-sources-details,.mom-cell .press-sources-below{align-items:flex-start;width:100%;text-align:left}
+.momentum-heading-rule{width:50px;height:2px;background:var(--amber);margin:-10px 0 30px}
+.momentum-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:24px 26px;overflow:hidden}
+.momentum-card-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:2px}
+.momentum-card-range{font-size:17px;color:var(--text-muted);margin-bottom:16px}
+.momentum-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px}
+.momentum-table{width:100%;min-width:900px;border-collapse:collapse;font-size:16px}
+.momentum-table th{background:var(--surface2);color:var(--text-muted);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:13px 14px;text-align:center;border-bottom:1px solid var(--border)}
+.momentum-table th:first-child{text-align:left;min-width:340px}.momentum-table th:nth-child(2){min-width:90px}
+.momentum-table td{padding:11px 14px;border-bottom:1px solid var(--border);text-align:center;vertical-align:top}
+.momentum-table tbody tr:last-child td{border-bottom:none}.momentum-table tr:hover td{background:rgba(201,146,42,.035)}
+.momentum-org{text-align:left!important;font-family:monospace;font-weight:700;font-size:16px}
+.momentum-total{font-weight:800;font-size:17px}
+.momentum-aggregate td{color:var(--text);font-weight:700}.momentum-aggregate .momentum-org{color:var(--text-muted)!important}
+.momentum-aggregate-count{font-weight:800}
+.momentum-week-cell{min-width:102px}
+.momentum-cell-content{display:flex;flex-direction:column;align-items:center;min-width:74px}
+.momentum-heat{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:34px;padding:0 9px;border-radius:4px;background:rgba(201,146,42,.42);font-weight:800;line-height:1}
+.momentum-zero{color:var(--text-muted);font-weight:700}
+.momentum-cell-content .press-sources-details{width:100%;max-width:210px;text-align:left}
+.momentum-cell-content .press-sources-below{align-items:flex-start;width:100%}
 .press-matrix-wrap{overflow-x:auto}
 .press-matrix{min-width:1120px}
 .press-matrix th:first-child,.press-matrix td:first-child{min-width:280px}
 .press-matrix th:not(:first-child),.press-matrix td:not(:first-child){min-width:155px}
-.tg{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.tg{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;overflow:hidden;min-width:920px}
 .tg-header,.tg-row{display:grid;grid-template-columns:${tgCols}}
-.tg-header{background:var(--surface2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
-.tg-label-cell{padding:10px 14px;color:var(--text-muted);border-right:1px solid var(--border)}
-.tg-org-cell{padding:10px 14px;text-align:center;border-right:1px solid var(--border);font-weight:600;font-size:12px}
+.tg-header{background:var(--surface2);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.tg-label-cell{padding:14px 18px;color:var(--text-muted);border-right:1px solid var(--border)}
+.tg-org-cell{padding:14px 18px;text-align:center;border-right:1px solid var(--border);font-weight:700;font-size:14px}
 .tg-row{border-top:1px solid var(--border)}.tg-row:hover{background:var(--surface2)}
-.tg-cell{padding:8px 14px;text-align:center;border-right:1px solid var(--border)}
-.badge-owns{background:var(--good);color:#0a0e17;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
-.badge-con{background:var(--surface3);color:var(--text);font-size:11px;padding:2px 8px;border-radius:10px}
-.badge-absent{color:var(--text-muted);font-size:13px}
+.tg-row .tg-label-cell{font-size:19px;line-height:1.3}
+.tg-cell{padding:14px 18px;text-align:center;border-right:1px solid var(--border);font-size:16px}
+.badge-owns{background:var(--good);color:#0a0e17;font-size:13px;font-weight:700;padding:3px 10px;border-radius:12px}
+.badge-con{background:var(--surface3);color:var(--text);font-size:13px;padding:3px 10px;border-radius:12px}
+.badge-absent{color:var(--text-muted);font-size:18px}
 .source-list{font-size:12px;line-height:1.8}
 .em-card{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:16px 20px;margin-bottom:12px}
 .em-topic{font-weight:700;color:var(--amber);margin-bottom:4px}.em-desc{color:var(--text);font-size:14px;margin-bottom:6px}
@@ -22062,12 +22085,17 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
     <div class="section" id="momentum">
       <div class="section-num">02c</div>
       <div class="section-title">Coverage Momentum</div>
-      <div class="section-desc">Weekly press article counts. Click \u2197 sources below a count to expand its headlines.</div>
-      <div style="overflow-x:auto">
-        <table class="data-table">
-          <thead><tr><th>Organisation</th>${weeks.map((w) => `<th>${w}</th>`).join("")}</tr></thead>
-          <tbody>${momentumRows()}</tbody>
+      <div class="section-desc">Weekly AQ article volume per organisation over the report period. Spikes are identified and traced to triggering events.</div>
+      <div class="momentum-heading-rule"></div>
+      <div class="momentum-card">
+        <div class="momentum-card-title">Weekly article volume \u2014 AQ-scoped</div>
+        <div class="momentum-card-range">${date_from} to ${date_to}</div>
+        <div class="momentum-table-wrap">
+        <table class="momentum-table">
+          <thead><tr><th>Organisation</th><th>Total</th>${weeks.map((w) => `<th>${w}</th>`).join("")}</tr></thead>
+          <tbody><tr class="momentum-aggregate"><td class="momentum-org">Press (all orgs)</td><td class="momentum-total">${momentumTotal}</td>${momentumAggregateCells}</tr>${momentumRows()}</tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -22075,10 +22103,10 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
       <div class="section-num">03</div>
       <div class="section-title">Topic Ownership Map</div>
       <div class="section-desc"><span class="badge-owns">LEADS</span> = most articles on topic &nbsp; <span class="badge-con">COVERS</span> = present &nbsp; <span class="badge-absent">\u2014</span> = absent</div>
-      <div class="tg">
+      <div style="overflow-x:auto"><div class="tg">
         <div class="tg-header"><div class="tg-label-cell">Topic</div>${orgNames.map((n, i) => `<div class="tg-org-cell" style="color:${orgHex(i)}">${hEsc(n)}</div>`).join("")}</div>
         ${AQ_TOPICS.map((topic) => `<div class="tg-row"><div class="tg-label-cell">${hEsc(topic)}</div>${orgs.map((_, i) => `<div class="tg-cell">${topicBadge(i, topic)}</div>`).join("")}</div>`).join("")}
-      </div>
+      </div></div>
     </div>
 
     <div class="section" id="appendix">
@@ -22206,7 +22234,7 @@ function dlEdit(){
 }
 function buildReportSkeleton(orgs, date_from, date_to, clientName) {
   const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const topicCols = "175px " + orgs.map(() => "1fr").join(" ");
+  const topicCols = "250px " + orgs.map(() => "1fr").join(" ");
   const cpCols = orgs.map(() => "1fr").join(" ");
   const orgChips = orgs.map((o, i) => {
     const hex = orgHex(i);
@@ -22237,7 +22265,7 @@ function buildReportSkeleton(orgs, date_from, date_to, clientName) {
   }).join("\n");
   const CSS = `:root{--ink:#0a0e17;--surface:#111520;--surface2:#181e2e;--surface3:#1e2638;--border:#252d40;--border2:#6b7e9a;--text:#d8e4f0;--muted:#5e7494;--muted2:#8fa3b8;--amber:#c9922a;--amber-dim:rgba(201,146,42,.12);--amber-glow:rgba(201,146,42,.06);--good:#4caf74;--warn:#d4a017;--bad:#e05c5c}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line-height:1.65;font-size:19px}
+body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line-height:1.65;font-size:20px}
 .shell{display:flex;min-height:100vh}
 .sidenav{width:220px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--surface);border-right:1px solid var(--border);padding:28px 0;display:flex;flex-direction:column}
 .sidenav-logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
@@ -22260,8 +22288,8 @@ body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line
 .sec{margin-bottom:56px;scroll-margin-top:24px}
 .sh{margin-bottom:24px}
 .se{font-family:monospace;font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.st{font-family:'DM Serif Display',serif;font-size:33px;font-weight:400;color:var(--text);line-height:1.2}
-.sd{margin-top:8px;font-size:18px;color:var(--muted2);max-width:680px}
+.st{font-family:'DM Serif Display',serif;font-size:40px;font-weight:400;color:var(--text);line-height:1.2}
+.sd{margin-top:8px;font-size:19px;color:var(--muted2);max-width:880px}
 .sdiv{width:40px;height:2px;background:var(--amber);margin:14px 0 0}
 .mg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .mc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
@@ -22275,13 +22303,13 @@ body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line
 .mch{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px}
 .ch-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
 .wbars{display:flex;gap:5px;align-items:flex-end;height:96px;margin-bottom:8px}
-.tg{display:grid;grid-template-columns:${topicCols};border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;font-size:17px}
-.tgh{background:var(--surface3);padding:10px 14px;font-family:monospace;font-size:15px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
-.tc{padding:12px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.tg{display:grid;grid-template-columns:${topicCols};border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;font-size:19px}
+.tgh{background:var(--surface3);padding:14px 18px;font-family:monospace;font-size:16px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+.tc{padding:14px 18px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
 .tc:nth-child(${orgs.length + 1}n){border-right:none}
 .tn{font-weight:600;color:var(--text);margin-bottom:3px}.cell-hl{font-size:16px;color:var(--muted);line-height:1.4;margin-top:5px}
 .owns{background:rgba(76,175,116,.06)}.con{background:rgba(61,142,240,.04)}
-.ob{display:inline-block;font-family:monospace;font-size:15px;font-weight:600;padding:1px 7px;border-radius:3px;margin-bottom:4px}
+.ob{display:inline-block;font-family:monospace;font-size:16px;font-weight:600;padding:2px 9px;border-radius:4px;margin-bottom:4px}
 .badge-owns{background:rgba(76,175,116,.15);color:var(--good);border:1px solid rgba(76,175,116,.3)}
 .badge-con{background:rgba(61,142,240,.1);color:#3d8ef0;border:1px solid rgba(61,142,240,.25)}
 .badge-absent{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
@@ -22297,6 +22325,21 @@ body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line
 .press-sources-label{color:var(--muted);font-family:monospace;font-size:13px;font-weight:500;letter-spacing:.02em;white-space:nowrap;cursor:pointer;user-select:none}
 .press-sources-label:hover,.press-sources-details[open] .press-sources-label{color:var(--amber)}
 .press-source-link{display:block;color:var(--amber);font-family:monospace;font-size:14px;font-weight:500;line-height:1.45;overflow-wrap:anywhere;text-align:left}
+.momentum-heading-rule{width:50px;height:2px;background:var(--amber);margin:-10px 0 30px}
+.momentum-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:24px 26px;overflow:hidden}
+.momentum-card-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:2px}
+.momentum-card-range{font-size:17px;color:var(--muted);margin-bottom:16px}
+.momentum-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px}
+.momentum-table{width:100%;min-width:900px;border-collapse:collapse;font-size:17px}
+.momentum-table th{background:var(--surface2);color:var(--muted);font-family:monospace;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:13px 14px;text-align:center;border-bottom:1px solid var(--border)}
+.momentum-table th:first-child{text-align:left;min-width:340px}.momentum-table th:nth-child(2){min-width:90px}
+.momentum-table td{padding:11px 14px;border-bottom:1px solid var(--border);text-align:center;vertical-align:top}
+.momentum-table tbody tr:last-child td{border-bottom:none}.momentum-table tr:hover td{background:rgba(201,146,42,.035)}
+.momentum-org{text-align:left!important;font-family:monospace;font-weight:700}.momentum-total{font-weight:800}
+.momentum-aggregate td{color:var(--text);font-weight:700}.momentum-aggregate .momentum-org{color:var(--muted2)!important}
+.momentum-week-cell{min-width:102px}.momentum-cell-content{display:flex;flex-direction:column;align-items:center;min-width:74px}
+.momentum-heat{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:34px;padding:0 9px;border-radius:4px;background:rgba(201,146,42,.42);font-weight:800;line-height:1}
+.momentum-zero{color:var(--muted);font-weight:700}.momentum-cell-content .press-sources-details{width:100%;max-width:210px;text-align:left}
 .ctag{display:inline-flex;font-family:monospace;font-size:15px;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(201,146,42,.25);border-radius:3px;padding:1px 6px;cursor:pointer;text-decoration:none;vertical-align:middle;margin-left:4px}
 .evd{display:none;background:var(--ink);border:1px solid var(--border2);border-radius:5px;padding:12px 14px;margin-top:9px}
 .evd.open{display:block}
@@ -22613,10 +22656,10 @@ For a non-zero count, replace its SOURCES token with the collapsed press-sources
 
 {{TV_ORG_TOPICS_HTML}}    per-org div with top 3 TV subtopics (border-left in org color)
 
-{{MOMENTUM_SECTION_HTML}} full <section class="sec" id="momentum">...</section> Section 02c. Every non-zero weekly count must use the same collapsed press-count-with-sources details markup so source headlines expand inline when \u2197 sources is clicked. Never use popups or cards.
+{{MOMENTUM_SECTION_HTML}} full <section class="sec" id="momentum">...</section> Section 02c. Match the report's fixed Coverage Momentum design: heading and amber divider, followed by one .momentum-card titled "Weekly article volume \u2014 AQ-scoped" with the report date range. Inside it, use one .momentum-table with Organisation | Total | weekly date columns, a first aggregate row labelled "Press (all orgs)", then organisation rows sorted by Total descending. Show zero weekly values as <span class="momentum-zero">\u00b7</span> and non-zero values as <span class="momentum-heat" style="color:{ORG_HEX}">{COUNT}</span>. Put the existing collapsed press-sources-details control directly below each non-zero organisation count so headlines expand inline. Do not create per-organisation cards, popups, or hover-only sources.
 
 ### Topic ownership
-{{TOPIC_CARDS_HTML}}      .tg grid, header + 21 topic rows. Leader=badge-owns, Active=badge-con, else muted dash.
+{{TOPIC_CARDS_HTML}}      one large .tg ownership grid (never separate cards), with a header + 21 generously spaced topic rows. Use the larger fixed typography and padding from the skeleton. Leader=badge-owns, Active=badge-con, else muted dash.
   Topics: NCAP, Policy, PM2.5 Exposure, Stubble Burning, Clean Air Finance, Vehicular Pollution,
   Health Impact, Industrial Pollution, Heat-AQI, Brick Kilns, Petrol Emissions, Diesel Emissions,
   Super Emitters, Thermal Power Plants, Household Pollution, Indoor Pollution,
