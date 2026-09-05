@@ -22309,362 +22309,13 @@ function dlEdit(){
 </body>
 </html>`;
 }
-function buildReportSkeleton(orgs, date_from, date_to, clientName) {
-  const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const cpCols = orgs.map(() => "1fr").join(" ");
-  const orgChips = orgs.map((o, i) => {
-    const hex = orgHex(i);
-    return `<span class="chip" style="background:${hex}1a;color:${hex};border:1px solid ${hex}4d"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:${hex}"></span>${hEsc(o)}</span>`;
-  }).join("");
-  const navOrgItems = orgs.map(
-    (o, i) => `<div style="display:flex;align-items:center;gap:6px;font-size:16px;color:var(--muted2);padding:3px 20px"><div style="width:8px;height:8px;border-radius:2px;background:${orgHex(i)}"></div>${hEsc(o)}</div>`
-  ).join("");
-  const tvCell = (sk, channel) => `<td style="font-family:monospace"><div class="press-count-with-sources"><span class="press-count-number">{{${sk}_TV_${channel}}}</span>{{${sk}_TV_${channel}_SOURCES}}</div></td>`;
-  const tvEngRows = orgs.map((o, i) => {
-    const sk = safeKey(o);
-    return `<tr><td><span style="font-family:monospace;font-size:16px;font-weight:700;color:${orgHex(i)}">${hEsc(o)}</span></td>${tvCell(sk, "NDTV")}${tvCell(sk, "NEWS18")}${tvCell(sk, "INDIATODAY")}</tr>`;
-  }).join("\n");
-  const tvHinRows = orgs.map((o, i) => {
-    const sk = safeKey(o);
-    return `<tr><td><span style="font-family:monospace;font-size:16px;font-weight:700;color:${orgHex(i)}">${hEsc(o)}</span></td>${tvCell(sk, "INDIATV")}${tvCell(sk, "ABP")}</tr>`;
-  }).join("\n");
-  const citationsHtml = orgs.map((o, i) => {
-    const sk = safeKey(o);
-    return `<details class="citation-group" ${i === 0 ? "open" : ""}>
-<summary class="citation-summary">
-  <span><strong>${hEsc(o)}</strong><span class="citation-count"> &mdash; {{${sk}_TOTAL}} articles</span></span>
-  <span class="citation-chevron">&#9662;</span>
-</summary>
-<div class="citation-table-wrap">
-<table class="citation-table"><thead><tr><th>#</th><th>Outlet</th><th>Date</th><th>Headline</th><th>Classification</th><th>Keywords</th><th>URL</th></tr></thead><tbody>{{${sk}_ARTICLE_ROWS}}</tbody></table>
-</div></details>`;
-  }).join("\n");
-  const CSS = `:root{--ink:#0a0e17;--surface:#111520;--surface2:#181e2e;--surface3:#1e2638;--border:#252d40;--border2:#6b7e9a;--text:#d8e4f0;--muted:#5e7494;--muted2:#8fa3b8;--amber:#c9922a;--amber-dim:rgba(201,146,42,.12);--amber-glow:rgba(201,146,42,.06);--good:#4caf74;--warn:#d4a017;--bad:#e05c5c}
-*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line-height:1.65;font-size:20px}
-.shell{display:flex;min-height:100vh}
-.sidenav{width:220px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--surface);border-right:1px solid var(--border);padding:28px 0;display:flex;flex-direction:column}
-.sidenav-logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
-.sidenav-logo-name{font-size:16px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
-.sidenav-logo-sub{font-size:15px;color:var(--muted);margin-top:2px;font-family:monospace}
-.nav-lbl{font-size:14px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:12px 20px 6px}
-.nav-a{display:block;padding:7px 20px;font-size:17px;color:var(--muted2);text-decoration:none;border-left:2px solid transparent}
-.nav-a:hover{color:var(--text);background:var(--surface2)}.nav-a.active{color:var(--amber);border-left-color:var(--amber);background:var(--amber-glow)}
-.sidenav-footer{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--border);font-family:monospace;font-size:15px;color:var(--muted);line-height:1.8}
-.main{flex:1;min-width:0;padding:0 48px 80px}
-.rh{padding:52px 0 44px;border-bottom:1px solid var(--border);margin-bottom:48px}
-.ey{font-family:monospace;font-size:16px;color:var(--amber);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px}
-.rt{font-family:'DM Serif Display',serif;font-size:47px;line-height:1.15;margin-bottom:10px;font-weight:400}
-.rti{color:var(--amber);font-style:italic}
-.rm{font-size:18px;color:var(--muted2);margin-bottom:28px;font-family:monospace}
-.chips{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-.chip{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:4px;font-size:17px;font-weight:600}
-.dn{background:var(--amber-glow);border:1px solid rgba(201,146,42,.2);border-radius:6px;padding:11px 16px;font-size:17px;color:var(--muted2);font-family:monospace}
-.dn strong{color:var(--amber)}
-.sec{margin-bottom:56px;scroll-margin-top:24px}
-.sh{margin-bottom:24px}
-.se{font-family:monospace;font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.st{font-family:'DM Serif Display',serif;font-size:40px;font-weight:400;color:var(--text);line-height:1.2}
-.sd{margin-top:8px;font-size:19px;color:var(--muted2);max-width:880px}
-.sdiv{width:40px;height:2px;background:var(--amber);margin:14px 0 0}
-.mg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px}
-.ml{font-family:monospace;font-size:15px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
-.mt{font-size:17px;color:var(--muted2);line-height:1.6}
-.sb-scope{background:var(--amber-glow);border:1px solid rgba(201,146,42,.18);border-radius:8px;padding:14px 18px;font-size:17px;color:var(--muted2);margin-bottom:20px;line-height:1.7}
-.sb-scope strong{color:var(--amber)}
-.cp{display:grid;grid-template-columns:${cpCols};gap:16px;margin-bottom:16px}
-.op{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:20px}
-.opn{font-size:16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
-.mch{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px}
-.ch-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
-.wbars{display:flex;gap:5px;align-items:flex-end;height:96px;margin-bottom:8px}
-.topic-map-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
-.topic-map-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:monospace;font-size:16px}
-.topic-map-table th{width:165px;min-width:165px;background:var(--surface2);color:var(--muted);font-size:14px;font-weight:700;letter-spacing:.06em;line-height:1.45;padding:14px 15px;text-align:left;vertical-align:middle;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
-.topic-map-table th:first-child{position:sticky;left:0;z-index:3;width:360px;min-width:360px}
-.topic-map-table td{width:165px;min-width:165px;padding:12px 15px;text-align:left;vertical-align:top;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
-.topic-map-table tr:last-child td{border-bottom:none}.topic-map-table th:last-child,.topic-map-table td:last-child{border-right:none}
-.topic-map-table tbody tr:hover td{background:rgba(201,146,42,.035)}
-.topic-map-table .topic-org{position:sticky;left:0;z-index:2;width:360px;min-width:360px;background:var(--surface2);font-size:17px;font-weight:700}
-.topic-cell-content{display:flex;flex-direction:column;align-items:flex-start;gap:2px}.topic-cell-content .press-sources-details{max-width:150px}
-.topic-cell-content .press-sources-label{display:inline-flex;padding:3px 8px;border:1px solid rgba(201,146,42,.35);border-radius:4px;background:rgba(201,146,42,.08);color:var(--amber);font-weight:700}
-.badge-owns{background:rgba(76,175,116,.15);color:var(--good);border:1px solid rgba(76,175,116,.3);font-family:monospace;font-size:13px;font-weight:700;padding:3px 10px;border-radius:4px;white-space:nowrap}
-.badge-con{background:rgba(201,146,42,.12);color:#f6b91d;border:1px solid rgba(201,146,42,.4);font-family:monospace;font-size:13px;font-weight:700;padding:3px 10px;border-radius:4px;white-space:nowrap}
-.badge-absent{color:var(--muted);font-size:18px}
-.nt,.at,.apt{width:100%;border-collapse:collapse;font-size:17px;margin-bottom:16px}
-.nt th,.at th,.apt th{background:var(--surface3);padding:10px 14px;text-align:left;font-family:monospace;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
-.nt td,.at td,.apt td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
-.nt tr:hover td{background:var(--surface2)}
-.press-count-with-sources{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:112px}
-.press-count-number{color:var(--text);font-weight:700;line-height:1.2}
-.press-sources-details{margin-top:5px;max-width:260px}
-.press-sources-details summary{list-style:none}.press-sources-details summary::-webkit-details-marker{display:none}
-.press-sources-below{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:5px}
-.press-sources-label{color:var(--muted);font-family:monospace;font-size:13px;font-weight:500;letter-spacing:.02em;white-space:nowrap;cursor:pointer;user-select:none}
-.press-sources-label:hover,.press-sources-details[open] .press-sources-label{color:var(--amber)}
-.press-source-link{display:block;color:var(--amber);font-family:monospace;font-size:14px;font-weight:500;line-height:1.45;overflow-wrap:anywhere;text-align:left}
-.citation-group{border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;background:var(--ink)}
-.citation-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 18px;background:var(--surface2);color:var(--text);cursor:pointer;list-style:none;user-select:none;font-size:18px}
-.citation-summary::-webkit-details-marker{display:none}.citation-summary::marker{display:none}
-.citation-count{color:var(--muted);font-weight:400}.citation-chevron{color:var(--muted);font-size:14px;transition:transform .15s}.citation-group[open] .citation-chevron{transform:rotate(180deg)}
-.citation-table-wrap{overflow-x:auto}.citation-table{width:100%;min-width:1180px;border-collapse:collapse;font-family:monospace;font-size:15px}
-.citation-table th{background:var(--surface2);color:var(--muted);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
-.citation-table td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:top}.citation-table tbody tr:last-child td{border-bottom:none}
-.citation-table th:nth-child(1),.citation-table td:nth-child(1){width:54px}.citation-table th:nth-child(2),.citation-table td:nth-child(2){width:150px}.citation-table th:nth-child(3),.citation-table td:nth-child(3){width:140px}.citation-table th:nth-child(4),.citation-table td:nth-child(4){min-width:310px}.citation-table th:nth-child(5),.citation-table td:nth-child(5){width:180px}.citation-table th:nth-child(6),.citation-table td:nth-child(6){min-width:240px}.citation-table th:nth-child(7),.citation-table td:nth-child(7){width:90px}
-.citation-date{white-space:nowrap}.citation-headline{color:var(--text);line-height:1.55}.citation-classification{color:var(--good)}
-.citation-keywords{display:flex;flex-wrap:wrap;gap:6px}.citation-keyword{display:inline-flex;padding:1px 6px;border:1px solid rgba(61,142,240,.35);border-radius:4px;background:rgba(61,142,240,.08);color:#3d8ef0;font-size:12px;line-height:1.5}
-.citation-url{color:var(--amber);font-weight:700}.citation-empty{color:var(--muted)}.citation-empty-row{color:var(--muted);text-align:center!important;padding:24px!important}
-.momentum-heading-rule{width:50px;height:2px;background:var(--amber);margin:-10px 0 30px}
-.momentum-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:24px 26px;overflow:hidden}
-.momentum-card-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:2px}
-.momentum-card-range{font-size:17px;color:var(--muted);margin-bottom:16px}
-.momentum-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px}
-.momentum-table{width:100%;min-width:900px;border-collapse:collapse;font-size:17px}
-.momentum-table th{background:var(--surface2);color:var(--muted);font-family:monospace;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:13px 14px;text-align:center;border-bottom:1px solid var(--border)}
-.momentum-table th:first-child{text-align:left;min-width:340px}.momentum-table th:nth-child(2){min-width:90px}
-.momentum-table td{padding:11px 14px;border-bottom:1px solid var(--border);text-align:center;vertical-align:top}
-.momentum-table tbody tr:last-child td{border-bottom:none}.momentum-table tr:hover td{background:rgba(201,146,42,.035)}
-.momentum-org{text-align:left!important;font-family:monospace;font-weight:700}.momentum-total{font-weight:800}
-.momentum-aggregate td{color:var(--text);font-weight:700}.momentum-aggregate .momentum-org{color:var(--muted2)!important}
-.momentum-week-cell{min-width:102px}.momentum-cell-content{display:flex;flex-direction:column;align-items:center;min-width:74px}
-.momentum-heat{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:34px;padding:0 9px;border-radius:4px;background:rgba(201,146,42,.42);font-weight:800;line-height:1}
-.momentum-zero{color:var(--muted);font-weight:700}.momentum-cell-content .press-sources-details{width:100%;max-width:210px;text-align:left}
-.ctag{display:inline-flex;font-family:monospace;font-size:15px;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(201,146,42,.25);border-radius:3px;padding:1px 6px;cursor:pointer;text-decoration:none;vertical-align:middle;margin-left:4px}
-.evd{display:none;background:var(--ink);border:1px solid var(--border2);border-radius:5px;padding:12px 14px;margin-top:9px}
-.evd.open{display:block}
-.ei{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start}
-.ei:last-child{border:none;padding-bottom:0}
-.en{font-family:monospace;font-size:15px;color:var(--muted);flex-shrink:0;min-width:40px;padding-top:2px}
-.eq{font-family:monospace;font-size:16px;color:var(--text);line-height:1.6;background:var(--surface3);border-left:2px solid var(--amber);padding:5px 9px;border-radius:0 3px 3px 0;margin-bottom:4px}
-.es{font-family:monospace;font-size:15px;color:var(--muted)}.es a{color:var(--amber);text-decoration:none}
-.lc{font-family:monospace;font-size:15px;color:var(--warn);background:rgba(212,160,23,.1);border:1px solid rgba(212,160,23,.25);border-radius:3px;padding:2px 6px}
-.cqp{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:18px}
-.cqe{padding:8px 10px;border-radius:4px;margin-bottom:6px;font-size:16px;line-height:1.6}
-.cqd{background:rgba(76,175,116,.07);border-left:2px solid var(--good)}
-.cqv{background:var(--surface3);border-left:2px solid var(--muted)}
-.cqet{font-family:monospace;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px}
-.cqd .cqet{color:var(--good)}.cqv .cqet{color:var(--muted)}.cqetx{color:var(--text);font-family:monospace;font-size:16px}
-.aeo-heading-rule{width:50px;height:2px;background:var(--amber);margin:-10px 0 30px}
-.aeo-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
-.aeo-table{width:100%;min-width:900px;border-collapse:collapse;font-family:monospace;font-size:16px}
-.aeo-table th{background:var(--surface2);color:var(--muted2);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:13px 18px;text-align:center;border-bottom:1px solid var(--border)}
-.aeo-table th:nth-child(2){text-align:left}.aeo-table th:nth-child(3){color:var(--amber)}
-.aeo-table td{padding:14px 18px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}.aeo-table tbody tr:last-child td{border-bottom:none}.aeo-table tbody tr:hover td{background:rgba(201,146,42,.035)}
-.aeo-rank{width:110px;color:var(--text);font-weight:700}.aeo-org{text-align:left!important;min-width:350px;font-weight:700}.aeo-total{font-size:18px;font-weight:800}
-.aeo-cohort td{color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.06em}.aeo-cohort .aeo-total{color:var(--amber)}
-.aeo-model-count{color:var(--amber);font-size:17px;font-weight:800}.aeo-model-count.is-zero{color:var(--muted)}
-.aeo-evidence{margin-top:18px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);overflow:hidden}
-.aeo-evidence summary{padding:12px 16px;color:var(--muted2);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;list-style:none}.aeo-evidence summary::-webkit-details-marker{display:none}
-.aeo-evidence summary:hover,.aeo-evidence[open] summary{color:var(--amber)}.aeo-evidence-list{padding:0 18px 14px}
-.aeo-q{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}.aeo-qn{font-weight:700;color:var(--amber);min-width:28px}
-.em-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin-bottom:12px}
-.em-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px}
-.em-topic{font-size:19px;font-weight:600;color:var(--text)}
-.em-mom{font-family:monospace;font-size:16px;color:var(--good);background:rgba(76,175,116,.1);border:1px solid rgba(76,175,116,.25);border-radius:3px;padding:2px 8px;flex-shrink:0}
-.em-body{font-size:18px;color:var(--muted2);line-height:1.65;margin-bottom:10px}
-.em-src{font-size:16px;color:var(--muted);padding:3px 0;font-family:monospace;display:flex;gap:8px}
-.em-src::before{content:"\\2192";color:var(--amber)}
-.scc{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:20px}
-.sca{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:22px;text-align:center}
-.scn{font-size:16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
-.scg{font-family:'DM Serif Display',serif;font-size:49px;line-height:1;margin:8px 0 4px;font-weight:400}
-#score table tbody tr{border-bottom:1px solid var(--border)}
-#score table tbody tr:hover{background:var(--surface2)}
-#score table td{padding:12px 12px}
-#score table thead th{padding:10px 12px;background:var(--surface3)}
-.fc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:20px 22px;display:flex;gap:18px;align-items:flex-start;margin-bottom:14px}
-.fn{font-family:'DM Serif Display',serif;font-size:41px;color:var(--amber);line-height:1;flex-shrink:0;opacity:.45;margin-top:2px}
-.fb{flex:1}.fh{font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.4}
-.fd{font-size:18px;color:var(--muted2);line-height:1.65}
-.pri-fix{display:inline-block;background:rgba(212,160,23,.12);color:var(--warn);border:1px solid rgba(212,160,23,.3);border-radius:3px;padding:2px 8px;font-family:monospace;font-size:15px;font-weight:600;white-space:nowrap}
-.pri-lev{display:inline-block;background:rgba(76,175,116,.12);color:var(--good);border:1px solid rgba(76,175,116,.3);border-radius:3px;padding:2px 8px;font-family:monospace;font-size:15px;font-weight:600;white-space:nowrap}
-.pri-opt{display:inline-block;background:rgba(61,142,240,.1);color:#3d8ef0;border:1px solid rgba(61,142,240,.25);border-radius:3px;padding:2px 8px;font-family:monospace;font-size:15px;font-weight:600;white-space:nowrap}
-.pri-inv{display:inline-block;background:rgba(224,92,92,.1);color:var(--bad);border:1px solid rgba(224,92,92,.25);border-radius:3px;padding:2px 7px;font-family:monospace;font-size:15px;font-weight:600;white-space:nowrap}
-.rat{font-size:16px;color:var(--text);font-family:monospace;line-height:1.55}
-.apt td{font-family:monospace;color:var(--muted2);font-size:16px}.apt td a{color:var(--amber);text-decoration:none}
-.rf{border-top:1px solid var(--border);padding:28px 0 0;font-family:monospace;font-size:15px;color:var(--muted);line-height:2}
-.edit-bar{position:fixed;top:14px;right:18px;z-index:2000;display:flex;gap:8px;align-items:center}
-.edit-btn{background:#1e2638;border:1px solid var(--border2);border-radius:5px;padding:6px 13px;font-family:monospace;font-size:16px;color:var(--muted2);cursor:pointer;transition:all .15s;line-height:1.4}
-.edit-btn:hover,.edit-btn.on{background:rgba(201,146,42,.15);border-color:rgba(201,146,42,.4);color:var(--amber)}
-.edit-dl{color:var(--good)!important;border-color:rgba(76,175,116,.3)!important;background:rgba(76,175,116,.07)!important;display:none}
-body.edit-mode .edit-dl{display:inline-block}
-body.edit-mode [contenteditable="true"]:hover{outline:1.5px dashed rgba(201,146,42,.55);border-radius:2px;cursor:text}
-body.edit-mode [contenteditable="true"]:focus{outline:1.5px solid rgba(201,146,42,.7);border-radius:2px}
-@media(max-width:900px){
-  .sidenav{display:none}
-  .main{padding:24px 20px 60px;max-width:100%}
-  .rh{padding:32px 0 28px;margin-bottom:32px}
-  .rt{font-size:33px}.st{font-size:27px}.sd{font-size:17px}
-  .cp,.scc,.mg{grid-template-columns:1fr}
-  .topic-map-table th:first-child,.topic-map-table .topic-org{width:280px;min-width:280px}
-  .ch-hdr{flex-direction:column;gap:8px}
-  .wbars{height:64px}.fc{flex-direction:column;gap:10px}.fn{font-size:31px}
-  .em-hdr{flex-direction:column;gap:6px}.scg{font-size:37px}
-  .edit-bar{top:8px;right:8px;gap:5px}
-  .nt,.at,.apt,.citation-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  #score table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
-}
-@media(max-width:480px){
-  .main{padding:16px 14px 60px}.rt{font-size:25px}.st{font-size:23px}.sec{margin-bottom:36px}
-}
-.mob-nav{display:none}
-@media(max-width:900px){
-  body{overflow-x:hidden}.shell{display:block!important}
-  .mob-nav{display:flex;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;padding:0;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .mob-nav::-webkit-scrollbar{display:none}
-  .mob-nav a{padding:11px 14px;font-size:16px;font-weight:600;color:var(--muted2);text-decoration:none;white-space:nowrap;letter-spacing:.04em;flex-shrink:0;border-bottom:2px solid transparent}
-  .mob-nav a:active{color:var(--amber);border-bottom-color:var(--amber)}
-}
-@media print{
-  .sidenav,.edit-bar,.mob-nav{display:none!important}
-  .main{padding:16px!important}.shell{display:block!important}.sec{page-break-inside:avoid}
-  a[href]:after{content:""}
-}`;
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Triple Media Intelligence &mdash; ${hEsc(orgs.join(" vs "))}</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>${CSS}</style></head><body>
-<div class="edit-bar" id="edit-bar"><button class="edit-btn" id="edit-btn" onclick="toggleEdit()">&#9998; Edit Mode</button><button class="edit-btn edit-dl" id="dl-btn" onclick="dlEdit()">&#8595; Download Edited</button></div>
-<div class="shell">
-<nav class="sidenav"><div class="sidenav-logo"><div class="sidenav-logo-name">Emerald AI</div><div class="sidenav-logo-sub">Triple Media Intelligence</div></div>
-<div class="nav-lbl">Report</div><a href="#exec" class="nav-a active">Executive Summary</a>
-<div class="nav-lbl">Press</div><a href="#sov" class="nav-a">Press Analytics</a><a href="#tv" class="nav-a">TV Coverage</a><a href="#momentum" class="nav-a">Momentum</a><a href="#topics" class="nav-a">Topic Ownership</a><a href="#appendix" class="nav-a">Citations</a><a href="#em" class="nav-a">Emerging Narratives</a>
-<div class="nav-lbl">Social Media</div><a href="#social" class="nav-a">Social Media</a>
-<div class="nav-lbl">LLM</div><a href="#aeo" class="nav-a">LLM Visibility</a>
-<div class="nav-lbl">Conclusions</div><a href="#score" class="nav-a">Scorecard</a><a href="#actions" class="nav-a">Action Matrix</a>
-<div class="sidenav-footer">Generated: ${now}<br>${navOrgItems}CONFIDENTIAL<br><span style="display:inline-block;margin-top:6px;padding:4px 8px;background:rgba(212,160,23,.12);border:1px solid rgba(212,160,23,.3);border-radius:4px;color:var(--amber);font-weight:700">&#8377;${52 * orgs.length}/month</span></div></nav>
-<div class="mob-nav"><a href="#exec">Summary</a><a href="#sov">Press</a><a href="#tv">TV</a><a href="#momentum">Momentum</a><a href="#social">Social</a><a href="#aeo">LLM</a><a href="#score">Score</a><a href="#actions">Actions</a></div>
-<main class="main">
-<header class="rh" id="header"><div class="ey">Air Quality Media Intelligence &middot; India</div>
-<h1 class="rt">Triple Media<br><span class="rti">Intelligence Report</span></h1>
-<div class="rm">Period: ${hEsc(date_from)} &rarr; ${hEsc(date_to)} &middot; ${now}</div>
-<div class="chips">${orgChips}</div>
-<div class="dn"><strong>Publicly available data</strong> Insight linked to evidence &middot; ${now}</div>
-</header>
-<section class="sec" id="exec"><div class="sh"><div class="se">Section 01</div><h2 class="st">Executive Summary</h2><div class="sd">Headline comparative findings across ${orgs.length} organisation${orgs.length !== 1 ? "s" : ""} \u2014 Press, LLM, and Social Media.</div><div class="sdiv"></div></div>
-<div style="background:rgba(212,160,23,.07);border:1px solid rgba(212,160,23,.2);border-radius:8px;overflow:hidden;margin-bottom:4px">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;cursor:pointer;user-select:none" onclick="toggleExecDraft()">
-<span style="font-family:monospace;font-size:16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber)">Draft Executive Summary <span style="font-weight:400;color:var(--muted2)">(AI-generated \u2014 review before sharing)</span></span>
-<span id="exec-draft-icon" style="font-family:monospace;font-size:17px;color:var(--amber)">&#9660; Show draft</span>
-</div>
-<div id="exec-draft" style="display:none;padding:0 18px 18px">{{EXEC_FINDINGS_HTML}}</div>
-</div>
-{{EXEC_SENTINEL_HTML}}
-<div style="margin-top:20px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:16px;color:var(--muted2);line-height:1.7">
-  <strong style="font-weight:600;letter-spacing:.04em">METHODOLOGY</strong> \u2014
-  Firecrawl search for media coverage &middot; AEO probing (Perplexity, OpenAI, Gemini) &middot;
-  APIdirect for social media (LinkedIn, X/Twitter, Instagram, YouTube) &middot;
-  Core outlets: TOI, HT, The Hindu, NDTV, News18, India Today, India TV, ABP News.
-</div>
-</section>
-<section class="sec" id="sov"><div class="sh"><div class="se">Section 02a</div><h2 class="st">Press Analytics</h2><div class="sd">AQ article counts per org, deduplicated, date-filtered.</div><div class="sdiv"></div></div>
-<div class="mch"><div class="ch-hdr"><div style="font-size:18px;font-weight:600;color:var(--text)">All AQ coverage \u2014 {{TOTAL_ARTICLES}} articles</div><div style="font-size:16px;color:var(--muted2);margin-top:3px">{{PRINT_TV_SPLIT}}</div></div>
-{{PRESS_SOV_BAR_HTML}}
-</div>
-<div style="font-size:17px;font-weight:600;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Print / Online</div>
-{{SOV_TABLE_HTML}}
-{{PRESS_SENTINEL_HTML}}
-</section>
-<section class="sec" id="tv"><div class="sh"><div class="se">Section 02b</div><h2 class="st">TV Channel Coverage</h2>
-<div class="sd">AQ article mentions in English TV (NDTV, News18, India Today) and Hindi TV (India TV, ABP News) channels.</div><div class="sdiv"></div></div>
-<div style="margin-bottom:16px">
-<div style="font-size:17px;font-weight:600;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">English TV</div>
-<table class="nt"><thead><tr><th>Org</th><th>NDTV</th><th>News18</th><th>India Today</th></tr></thead><tbody>
-${tvEngRows}
-</tbody></table></div>
-<div>
-<div style="font-size:17px;font-weight:600;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Hindi TV</div>
-<table class="nt"><thead><tr><th>Org</th><th>India TV</th><th>ABP News</th></tr></thead><tbody>
-${tvHinRows}
-</tbody></table></div>
-<div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06)">
-<div id="topic-focus" style="font-size:17px;font-weight:600;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">What These Orgs Actually Covered on TV</div>
-<div style="font-size:15px;color:var(--muted2);margin-bottom:12px;line-height:1.6">Top AQ subtopics from each org\u2019s verified TV coverage. Full breakdown: <a href="#topics" style="color:var(--amber)">\xA703 Topic Ownership Map</a>.</div>
-{{TV_ORG_TOPICS_HTML}}
-</div>
-</section>
-{{MOMENTUM_SECTION_HTML}}
-<section class="sec" id="topics"><div class="sh"><div class="se">Section 03 \u2014 21 topics</div><h2 class="st">Topic Ownership Map</h2>
-<div class="sd">Each cell shows article count and representative headlines. Position: <strong style="color:#4ade80">Leader</strong> (\u22655 articles) &middot; <strong style="color:#fbbf24">Active</strong> (2\u20134 articles) &middot; <strong style="color:var(--muted)">Not Present</strong> (0\u20131).</div><div class="sdiv"></div></div>
-{{TOPIC_CARDS_HTML}}
-</section>
-<section class="sec" id="appendix"><div class="sh"><div class="se">Section 04</div><h2 class="st">Citations</h2><div class="sd">All indexed articles from tracked outlets. Verify any claim by following the URL.</div><div class="sdiv"></div></div>
-${citationsHtml}
-</section>
-<section class="sec" id="em"><div class="sh"><div class="se">Section 05</div><h2 class="st">Emerging Narratives</h2><div class="sd">AQ narrative topics with measurable media traction where <strong style="color:var(--warn)">none of the tracked organisations published coverage</strong> during this period.</div><div class="sdiv"></div></div>
-<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;cursor:pointer;user-select:none" onclick="toggleEm()">
-<span style="font-family:monospace;font-size:16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--amber)">{{EMERGING_COUNT}} emerging narrative{{EMERGING_COUNT_PLURAL}} identified</span>
-<span id="em-icon" style="font-family:monospace;font-size:17px;color:var(--amber)">&#9650; Collapse</span>
-</div>
-<div id="em-body">{{EMERGING_HTML}}</div>
-</section>
-<section class="sec" id="aeo"><div class="sh"><div class="se">Section 06 \u2014 LLM Visibility</div><h2 class="st">LLM Visibility</h2>
-<div class="sd">When someone asks an AI model about Indian air quality, which organisations does it cite? 15 questions sent to 3 LLMs. Each time an org is named in a response, it counts as one mention. \u2713 = cited &middot; \u2715 = not cited.</div><div class="sdiv"></div></div>
-{{AEO_HTML}}
-</section>
-<section class="sec" id="social"><div class="sh"><div class="se">Section 07 &middot; ${hEsc(date_from)} \u2192 ${hEsc(date_to)}</div><h2 class="st">Social Media Presence</h2><div class="sd">AQ post frequency and engagement rates across LinkedIn, X/Twitter, Instagram, and YouTube.</div><div class="sdiv"></div></div>
-{{SOCIAL_HTML}}
-</section>
-<section class="sec" id="score"><div class="sh"><div class="se">Section 08</div><h2 class="st">Scorecard</h2><div class="sd">Share of voice across Press, LLM, and Social. Each channel normalised to cohort share \u2014 equal weight. Overall SoV = average of three. Click any row to see breakdown.</div><div class="sdiv"></div></div>
-<div style="overflow-x:auto">
-<table style="width:100%;border-collapse:collapse;font-size:18px">
-  <thead>
-    <tr style="border-bottom:2px solid var(--border)">
-      <th style="padding:10px 12px;text-align:center;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap">Rank</th>
-      <th style="padding:10px 12px;text-align:left;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Organisation</th>
-      <th style="padding:10px 12px;text-align:left;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap">Press SoV</th>
-      <th style="padding:10px 12px;text-align:left;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">LLM SoV</th>
-      <th style="padding:10px 12px;text-align:center;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap">Social SoV</th>
-      <th style="padding:10px 12px;text-align:left;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);white-space:nowrap">Overall SoV</th>
-    </tr>
-  </thead>
-  <tbody>{{SCORECARD_ROWS_HTML}}</tbody>
-</table>
-</div>
-</section>
-<section class="sec" id="actions"><div class="sh"><div class="se">Section 09</div><h2 class="st">Action Matrix</h2><div class="sd">Data-anchored recommendations per org, including LLM and Social Media actions.</div><div class="sdiv"></div></div>
-<table class="at"><thead><tr><th>Org</th><th>Priority</th><th>Area</th><th>Action</th><th>Data rationale</th></tr></thead><tbody>{{ACTION_ROWS_HTML}}</tbody></table>
-</section>
-<footer class="rf">Generated by Emerald AI &middot; Triple Media Tracker v8 &middot; ${now}<br>
-Data: Firecrawl &middot; APIdirect &middot; LLM AEO probing &middot; ${hEsc(date_from)} to ${hEsc(date_to)}<br>
-<strong style="color:var(--text)">CONFIDENTIAL</strong> \u2014 prepared for ${hEsc(clientName || "client")}</footer>
-</main></div>
-<script>
-function td(id){var e=document.getElementById(id);if(!e)return;if(e.classList.contains('evd')){e.classList.toggle('open');}else{e.style.display=e.style.display==='none'?'block':'none';}}
-var secs=document.querySelectorAll('.sec[id],header[id]');
-var nis=document.querySelectorAll('.nav-a');
-secs.forEach(function(s){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){nis.forEach(function(n){n.classList.remove('active');});var a=document.querySelector('.nav-a[href="#'+e.target.id+'"]');if(a)a.classList.add('active');}});},{threshold:0.25,rootMargin:'-10% 0px -60% 0px'}).observe(s);});
-function toggleExecDraft(){var d=document.getElementById('exec-draft');var ic=document.getElementById('exec-draft-icon');if(!d)return;var open=d.style.display!=='none';d.style.display=open?'none':'block';if(ic)ic.textContent=open?'\\u25bc Show draft':'\\u25b2 Hide draft';}
-function toggleEm(){var b=document.getElementById('em-body');var ic=document.getElementById('em-icon');if(!b)return;var open=b.style.display!=='none';b.style.display=open?'none':'';if(ic)ic.innerHTML=open?'&#9660; Expand':'&#9650; Collapse';}
-function toggleEdit(){
-  var on=!document.body.classList.contains('edit-mode');
-  document.body.classList.toggle('edit-mode',on);
-  var btn=document.getElementById('edit-btn');
-  if(btn){btn.textContent=on?'\\u2715 Exit Edit':'\\u9998 Edit Mode';btn.classList.toggle('on',on);}
-  document.querySelectorAll('.sd,.fd,.rat,.em-body,.eq,.cqetx').forEach(function(el){el.contentEditable=on?'true':'false';});
-}
-function dlEdit(){
-  var bar=document.getElementById('edit-bar');
-  var oldMode=document.body.classList.contains('edit-mode');
-  document.body.classList.remove('edit-mode');
-  document.querySelectorAll('.sd,.fd,.rat,.em-body,.eq,.cqetx').forEach(function(el){el.contentEditable='false';});
-  if(bar)bar.style.display='none';
-  var html='<!DOCTYPE html>'+document.documentElement.outerHTML;
-  if(bar)bar.style.display='';
-  if(oldMode)document.body.classList.add('edit-mode');
-  var b=new Blob([html],{type:'text/html'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(b);
-  a.download='aq-report-edited.html';a.click();URL.revokeObjectURL(a.href);
-}
-</script></body></html>`;
-}
 server.tool(
   "get_report_instructions",
   `Call this FIRST before starting any report. Pass the org names, date range, and optional
-   client name. Returns a complete pre-built HTML skeleton with {{PLACEHOLDER}} tokens.
-   Your ONLY job: collect data using tools, replace every {{TOKEN}} in the skeleton,
-   then call save_report with the filled HTML. Never restructure the HTML.`,
+   client name. Returns the full data-collection workflow and scoring rules. Your job:
+   collect data using the available tools, then call generate_report ONCE with the complete
+   structured JSON. The HTML is generated deterministically server-side from that JSON —
+   never write HTML yourself, and never call save_report for a fresh report.`,
   {
     orgs: external_exports.array(external_exports.string()).min(1).describe('Organisation names, e.g. ["CEEW","WRI India"]'),
     date_from: external_exports.string().describe("Start date YYYY-MM-DD"),
@@ -22677,34 +22328,32 @@ server.tool(
     callTracker.apidirectCalls = 0;
     callTracker.perplexityCalls = 0;
     callTracker.openaiCalls = 0;
-    const skeleton = buildReportSkeleton(orgs, date_from, date_to, client ?? "Client");
-    const tokenRef = `
+    const text = `
 ## YOUR ROLE
-You are the Emerald AI report engine. The skeleton HTML below is FIXED \u2014 do not alter
-its structure, section order, CSS, or layout. Your ONLY job:
-1. Call get_org_history for each org (trends context)
-2. Collect all data using tools (social, press, AEO, emerging narratives)
-3. Replace every {{TOKEN}} in the skeleton with real data
-4. Call save_org_metrics for each org
-5. Call save_report with the filled HTML
+You are the Emerald AI report engine. You collect data using the available tools, then
+call generate_report ONCE with the complete structured JSON below. generate_report builds
+the HTML deterministically server-side — you never write or edit HTML.
 
-## WORKFLOW \u2014 collect data ONLY for: ${orgs.map(hEsc).join(", ")}
+## WORKFLOW — collect data ONLY for: ${orgs.map(hEsc).join(", ")}
 
-### Social handles
-Pre-configured handles for known orgs are in config.json (ORG_HANDLES).
-Pass li_handle/twitter_handle/ig_handle directly; use org_name for unknowns.
-Known orgs (from org-handles.json + config.json): call list_org_handles to see the full current list.
+### Step 1 — context
+Call get_org_history for each org (trends context).
 
-### News queries (run per org in parallel)
+### Step 2 — social handles
+Pre-configured handles for known orgs are in config.json (ORG_HANDLES) and org-handles.json.
+Pass li_handle/twitter_handle/ig_handle directly when known; use org_name for unknowns.
+Call list_org_handles to see the full current list.
+
+### Step 3 — news queries (run per org in parallel)
 Print/Online: query='"ORG" air quality', date_from=${date_from}, date_to=${date_to}
 TV:           query='air quality "ORG"', date_from=${date_from}, date_to=${date_to}
 
-### Emerging narratives (run once)
+### Step 4 — emerging narratives (run once)
 Exclusions: ${orgs.map((o) => `-"${o}"`).join(" ")}
 Run 5 queries: "air quality India EXCL", "air pollution India policy EXCL",
 "India AQI PM2.5 health EXCL", "India air pollution research EXCL", "India smog pollution EXCL"
 
-### AEO \u2014 run ALL 15 questions via query_ai_for_mentions for each org:
+### Step 5 — AEO — run ALL 15 questions via query_ai_for_mentions for each org:
 1. Which organisations are leading research on air quality and pollution in India?
 2. Who are the top experts or organisations working on PM2.5 reduction in South Asia?
 3. What NGOs or think tanks are most active in India's clean air campaign?
@@ -22721,96 +22370,36 @@ Run 5 queries: "air quality India EXCL", "air pollution India policy EXCL",
 14. Who is leading awareness campaigns about smog and vehicular pollution in India?
 15. What organisations collaborate internationally on South Asian air quality issues?
 
-AEO score = min(total mentions across all 15 questions \xD7 20, 100)
+Record every mention as one {question_n, model, context} entry in aeo_mentions —
+do not pre-aggregate. AEO score = min(total mentions across all 15 questions × 20, 100).
 
-### SCORING FORMULAS
-Social (max 100): LinkedIn min((posts\xD73)+(ER%\xD710),40) + Twitter min((posts\xD71.5)+(ER%\xD75),20) + IG min((posts\xD72)+(ER%\xD78),20) + YT min((videos\xD72)+(subs/5000),20)
-Media (max 100):  Online count\xD75 max 50; Print count\xD78 max 30; TV count\xD710 max 20
-Overall = (Social\xD70.4) + (Media\xD70.4) + (AEO\xD70.2)
-SoV% = org_overall / sum_all \xD7 100
+### SCORING FORMULAS (informational — generate_report computes these itself)
+Social (max 100): LinkedIn min((posts×3)+(ER%×10),40) + Twitter min((posts×1.5)+(ER%×5),20) + IG min((posts×2)+(ER%×8),20) + YT min((videos×2)+(subs/5000),20)
+Media (max 100):  Online count×5 max 50; Print count×8 max 30; TV count×10 max 20
+Overall = (Social×0.4) + (Media×0.4) + (AEO×0.2)
+SoV% = org_overall / sum_all × 100
 
-## TOKEN REFERENCE \u2014 replace EVERY {{TOKEN}} before calling save_report
+### Step 6 — save trends
+Call save_org_metrics for each org once data is collected.
 
-### Org color mapping:
-${orgs.map((o, i) => `${hEsc(o)} \u2192 ${orgHex(i)}  safeKey=${safeKey(o)}`).join("\n")}
-
-### Global
-{{TOTAL_ARTICLES}}        integer total across all orgs
-{{PRINT_TV_SPLIT}}        e.g. "42 Print / Online \xB7 8 TV News"
-{{PRESS_SOV_BAR_HTML}}    colored bar chart per org (flex column; bar widths = % of max):
-  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-family:monospace;color:{ORG_HEX};width:90px;flex-shrink:0">{ORG}</span>
-      <div style="flex:1;height:10px;background:var(--surface3);border-radius:5px;overflow:hidden"><div style="width:{PCT}%;height:100%;background:{ORG_HEX};border-radius:5px"></div></div>
-      <span style="font-family:monospace;color:{ORG_HEX};width:50px;text-align:right">{COUNT}</span>
-    </div>
-  </div>
-{{SOV_TABLE_HTML}}        table.nt with outlet columns: Org | TOI | HT | The Hindu | NDTV | News18 | India Today | India TV | ABP News | Total.
-  In every non-zero count cell, put a collapsed \u2197 sources control directly below the number. Clicking it expands all linked source headlines:
-  <div class="press-count-with-sources"><span class="press-count-number">{COUNT}</span><details class="press-sources-details"><summary class="press-sources-label">\u2197 sources</summary><div class="press-sources-below"><a class="press-source-link" href="{URL}" target="_blank" rel="noopener">{HEADLINE}</a></div></details></div>
-  Sources must expand inline below their number, never in popups, hover states, cards, or a separate column.
-{{PRESS_SENTINEL_HTML}}   green if all orgs have coverage, amber if any = 0
-
-### Per-org TV (replace ORG with safeKey):
-{{ORG_TV_NDTV}} {{ORG_TV_NEWS18}} {{ORG_TV_INDIATODAY}} {{ORG_TV_INDIATV}} {{ORG_TV_ABP}}
-These are integer counts in the pre-built English and Hindi TV matrix rows.
-{{ORG_TV_NDTV_SOURCES}} {{ORG_TV_NEWS18_SOURCES}} {{ORG_TV_INDIATODAY_SOURCES}} {{ORG_TV_INDIATV_SOURCES}} {{ORG_TV_ABP_SOURCES}}
-For a non-zero count, replace its SOURCES token with the collapsed press-sources-details markup containing every linked headline. For zero, replace the SOURCES token with an empty string. TV sources must expand inline beneath the count; never use per-organisation cards.
-
-{{TV_ORG_TOPICS_HTML}}    per-org div with top 3 TV subtopics (border-left in org color)
-
-{{MOMENTUM_SECTION_HTML}} full <section class="sec" id="momentum">...</section> Section 02c. Match the report's fixed Coverage Momentum design: heading and amber divider, followed by one .momentum-card titled "Weekly article volume \u2014 AQ-scoped" with the report date range. Inside it, use one .momentum-table with Organisation | Total | weekly date columns, a first aggregate row labelled "Press (all orgs)", then organisation rows sorted by Total descending. Show zero weekly values as <span class="momentum-zero">\u00b7</span> and non-zero values as <span class="momentum-heat" style="color:{ORG_HEX}">{COUNT}</span>. Put the existing collapsed press-sources-details control directly below each non-zero organisation count so headlines expand inline. Do not create per-organisation cards, popups, or hover-only sources.
-
-### Topic ownership
-{{TOPIC_CARDS_HTML}}      one horizontally scrollable .topic-map-table inside .topic-map-wrap (never separate cards). Organisations are rows; the 21 exact keyword labels below are columns in this exact order. Keep the first ORG column sticky. Each cell uses its corresponding internal classification key, shows Leader \u00b7 {COUNT} for \u22655 articles, Active \u00b7 {COUNT} for 2\u20134, and a muted dash for 0\u20131. Leader uses badge-owns; Active uses badge-con. Put a collapsed press-sources-details list beneath every non-dash count.
-  Exact visible column labels (internal key in parentheses):
-  NCAP / POLICY TARGETS (NCAP); POLICY & REGULATIONS (Policy); PM2.5 EXPOSURE MAPPING (PM2.5 Exposure);
-  STUBBLE BURNING (Stubble Burning); CLEAN AIR FINANCE (Clean Air Finance); VEHICULAR POLLUTION (Vehicular Pollution);
-  HEALTH IMPACT (Health Impact); INDUSTRIAL POLLUTION (Industrial Pollution); HEAT-AQI INTERACTION (Heat-AQI);
-  BRICK KILNS (Brick Kilns); PETROL EMISSIONS (Petrol Emissions); DIESEL EMISSIONS (Diesel Emissions);
-  SUPER EMITTERS (Super Emitters); THERMAL POWER PLANTS (Thermal Power Plants); HOUSEHOLD POLLUTION (Household Pollution);
-  INDOOR POLLUTION (Indoor Pollution); BIOMASS AIR POLLUTION (Biomass Air Pollution); RICE RESIDUE BURNING (Rice Residue Burning);
-  WHEAT RESIDUE BURNING (Wheat Residue Burning); ROAD DUST (Road Dust); GENERAL AIR QUALITY (General AQ).
-
-### Per-org citations (skeletons already in HTML):
-{{ORG_TOTAL}}   e.g. {{CEEW_TOTAL}} = 12
-{{ORG_ARTICLE_ROWS}}  <tr> rows per article for the expandable organisation accordion. Preserve the exact column order: # | Outlet | Date | Headline | Classification | Keywords | URL. Use .citation-date, .citation-headline, .citation-classification, a .citation-keywords wrapper containing one .citation-keyword per keyword, and a .citation-url link labelled "link". For an organisation with no articles, insert one <tr><td colspan="7" class="citation-empty-row">No articles in this report period.</td></tr>. Do not remove the surrounding <details> accordion.
-
-### Emerging narratives
-{{EMERGING_COUNT}} {{EMERGING_COUNT_PLURAL}} {{EMERGING_HTML}}
-
-### AEO section
-{{AEO_HTML}}  one summary-first AEO block matching the fixed design. Begin with .aeo-table-wrap containing one .aeo-table with the exact columns Rank | Org | Total | Claude | Perplexity | GPT-4o mini. The first tbody row is .aeo-cohort and shows cohort totals for all four numeric columns. Follow with organisation rows sorted by combined Total descending and ranked #1, #2, etc. Each per-model organisation value is {COUNT}/15 using .aeo-model-count; add .is-zero when zero. Normalise model names: Claude/Anthropic/Sonnet = Claude, Perplexity/Sonar = Perplexity, GPT/OpenAI = GPT-4o mini. Count unique question numbers per model. Place the 15 canonical questions below the table inside a collapsed <details class="aeo-evidence"> with .aeo-evidence-list; do not use ranking bars or per-organisation cards.
-
-### Social section
-{{SOCIAL_HTML}}  table.nt: # | Org | LI Posts | LI ER% | LI Flw | X Posts | X ER% | X Flw | IG Posts | IG ER% | IG Flw | YT Videos | YT Subs | Social Score
-
-### Scorecard
-{{SCORECARD_ROWS_HTML}}  <tr> per org (sorted desc by Overall SoV) + expandable breakdown <tr>
-  Rank colors: 1st=var(--good), 2nd/3rd=var(--amber), rest=var(--muted2)
-  Use safeKey as ID prefix for toggle: onclick="td('{SK}-bd')" + <tr id="{SK}-bd" style="display:none">
-
-### Action matrix
-{{ACTION_ROWS_HTML}}  <tr> per action; priority classes: pri-fix pri-lev pri-opt pri-inv
-
-### Exec summary
-{{EXEC_FINDINGS_HTML}}  3 .fc cards with number + headline + detail
-{{EXEC_SENTINEL_HTML}}  green sentinel note (or amber if mismatch found)
+### Step 7 — generate the report
+Call generate_report ONCE with:
+{
+  client: "${hEsc(client ?? "Client")}",
+  date_from: "${date_from}",
+  date_to: "${date_to}",
+  orgs: [ { name, articles: [{headline,url,outlet,date,topics,classification,keywords,type:"online"|"print"|"tv"}], social: {li_posts,li_er,li_followers,x_posts,x_er,x_followers,ig_posts,ig_er,ig_followers,yt_videos,yt_subs}, aeo_mentions: [{question_n,model,context}], actions: [{text,why,priority:"fix"|"lev"|"opt"|"inv"}] }, ... ],
+  emerging: [{topic,description,momentum,inference,sources:[{headline,url}]}],
+  exec_findings: [{headline,detail}],
+  monthly_cost_inr
+}
 
 ## RULES
-- NEVER alter HTML structure, section IDs, or CSS
-- NEVER add or remove sections
-- NEVER fabricate article headlines, URLs, quotes, or social post text
-- If data unavailable: show 0 / \u2014 / "Data unavailable". Never leave a {{TOKEN}} unfilled.
+- Never fabricate article headlines, URLs, quotes, or social post text.
+- If a field is unavailable: omit it or use its schema default — generate_report renders zeros/dashes correctly on its own.
+- Never write HTML yourself, and never call save_report for a fresh report — generate_report is the only supported path and produces the current template.
 `;
-    return { content: [{ type: "text", text: `## SKELETON HTML \u2014 fill all {{TOKEN}} placeholders, then call save_report
-
-\`\`\`html
-${skeleton}
-\`\`\`
-
----
-${tokenRef}` }] };
+    return { content: [{ type: "text", text }] };
   }
 );
 var RdArticleSchema = external_exports.object({
