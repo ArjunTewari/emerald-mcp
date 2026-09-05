@@ -21715,21 +21715,30 @@ function buildHTML(data) {
     return isLead ? `<span class="badge-owns">LEADS</span>` : `<span class="badge-con">COVERS</span>`;
   }
   function outletArts(orgIdx, outlet) {
-    return orgs[orgIdx].articles.filter((a) => a.outlet === outlet);
+    const aliases = {
+      toi: "TOI",
+      timesofindia: "TOI",
+      thetimesofindia: "TOI",
+      ht: "HT",
+      hindustantimes: "HT",
+      thehindustantimes: "HT",
+      thehindu: "TheHindu",
+      indianexpress: "IndianExpress",
+      theindianexpress: "IndianExpress",
+      deccanherald: "DeccanHerald",
+      ndtv: "NDTV",
+      news18: "News18",
+      indiatoday: "IndiaToday",
+      indiatv: "IndiaTV",
+      abp: "ABP",
+      abpnews: "ABP"
+    };
+    const normalise = (value) => aliases[String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "")] ?? value;
+    return orgs[orgIdx].articles.filter((a) => normalise(a.outlet) === outlet);
   }
   function rankBadge(r) {
     const cls = r === 1 ? "rank-1" : r === 2 ? "rank-2" : r === 3 ? "rank-3" : "rank-n";
     return `<span class="rank-badge ${cls}">${r}</span>`;
-  }
-  function tvTopicFocus(orgIdx) {
-    const tvArts = orgs[orgIdx].articles.filter((a) => a.type === "tv");
-    if (!tvArts.length) return `<div class="topic-focus-empty">No classified topics found for ${hEsc(orgs[orgIdx].name)} in the TV channel.<br><span style="color:var(--text-muted)">Genuinely low/no TV presence in the report period.</span></div>`;
-    const topicMap = {};
-    for (const a of tvArts) for (const t of a.topics.length ? a.topics : ["General AQ"]) (topicMap[t] ??= []).push(a);
-    return Object.entries(topicMap).map(([topic, arts]) => {
-      const rows = arts.slice(0, 3).map((a) => `<div class="tv-art">${a.url ? `<a href="${hEsc(a.url)}" target="_blank">${hEsc(a.headline)}</a>` : hEsc(a.headline)} <span class="art-outlet">${hEsc(a.outlet)}</span> <span class="art-date">${a.date}</span></div>`).join("");
-      return `<div class="tv-topic-block" style="border-left:3px solid ${orgHex(orgIdx)};padding-left:12px;margin-bottom:12px"><div style="color:${orgHex(orgIdx)};font-weight:700;margin-bottom:6px">${hEsc(topic)}</div>${rows}</div>`;
-    }).join("");
   }
   function citationsHTML() {
     const items = [];
@@ -21739,6 +21748,19 @@ function buildHTML(data) {
       items.push(`<div class="cite-row"><span class="cite-n">[${idx++}]</span><a href="${hEsc(a.url)}" target="_blank">${hEsc(a.headline)}</a><span class="cite-outlet">${hEsc(a.outlet)} \xB7 ${a.date}</span></div>`);
     }
     return items.length ? items.join("") : `<div style="color:var(--text-muted)">No source URLs provided.</div>`;
+  }
+  function pressSourcesBelow(articles) {
+    if (!articles.length) return "";
+    const links = articles.map((article) => {
+      const fullTitle = String(article.headline ?? "Source");
+      const shortTitle = fullTitle.length > 72 ? `${fullTitle.slice(0, 69)}\u2026` : fullTitle;
+      return article.url ? `<a class="press-source-link" href="${hEsc(article.url)}" target="_blank" rel="noopener" title="${hEsc(fullTitle)}">${hEsc(shortTitle)}</a>` : `<span class="press-source-link press-source-text" title="${hEsc(fullTitle)}">${hEsc(shortTitle)}</span>`;
+    }).join("");
+    return `<details class="press-sources-details"><summary class="press-sources-label">\u2197 sources</summary><div class="press-sources-below">${links}</div></details>`;
+  }
+  function pressCountWithSources(articles) {
+    if (!articles.length) return `<span class="cell-zero">0</span>`;
+    return `<div class="press-count-with-sources"><span class="press-count-number">${articles.length}</span>${pressSourcesBelow(articles)}</div>`;
   }
   const orgNames = orgs.map((o) => o.name);
   const orgChips = orgNames.map((n, i) => `<span class="chip" style="background:${orgHex(i)}1a;color:${orgHex(i)};border:1px solid ${orgHex(i)}4d"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:${orgHex(i)}"></span>${hEsc(n)}</span>`).join("");
@@ -21751,42 +21773,32 @@ function buildHTML(data) {
   }
   const sovBarHtml = `<div class="sov-bar-row">${orgs.map((_, i) => sovBar(i)).join("")}</div>`;
   const sovLegend = orgNames.map((n, i) => `<div class="sov-legend-item"><span style="width:10px;height:10px;border-radius:2px;background:${orgHex(i)};display:inline-block"></span>${hEsc(n)}</div>`).join("");
-  const pressSovRows = sorted.map((i) => `<tr>
-    <td>${rankBadge(ranks[i])}</td>
-    <td style="color:${orgHex(i)};font-weight:600">${hEsc(orgNames[i])}</td>
-    <td>${orgs[i].articles.filter((a) => a.type === "online").length}</td>
-    <td>${orgs[i].articles.filter((a) => a.type === "print").length}</td>
-    <td><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${Math.min(ms[i], 100)}%;background:var(--amber)"></div></div><span class="score-val">${r0(ms[i])}</span></div></td>
-    <td class="sov-cell">${r1(pressSovPct[i])}%</td>
-  </tr>`).join("");
-  function pressOutletTable(orgIdx) {
-    return PRINT_OUTLETS.map((out) => {
-      const arts = outletArts(orgIdx, out);
-      const label = OUTLET_LABELS[out] ?? out;
-      const k = safeKey(`sov_${safeKey(orgNames[orgIdx])}_${out}`);
-      if (!arts.length) return `<tr><td>${hEsc(label)}</td><td class="cell-zero">0</td><td>\u2014</td></tr>`;
-      const sources = arts.slice(0, 5).map((a) => a.url ? `<a href="${hEsc(a.url)}" target="_blank">${hEsc(a.headline)}</a>` : hEsc(a.headline)).join("<br>");
-      return `<tr onclick="td('${k}')" style="cursor:pointer"><td>${hEsc(label)}</td><td style="color:var(--amber);font-weight:700">${arts.length}</td><td id="${k}" style="display:none"><div class="source-list">${sources}</div></td></tr>`;
-    }).join("");
+  const pressMatrixRows = orgs.map((_, i) => {
+    return `<tr>
+      <td style="color:${orgHex(i)};font-weight:600">${hEsc(orgNames[i])}</td>
+      ${PRINT_OUTLETS.map((outlet) => `<td>${pressCountWithSources(outletArts(i, outlet))}</td>`).join("")}
+    </tr>`;
+  }).join("");
+  const pressMatrixCohortCells = PRINT_OUTLETS.map((outlet) => {
+    const count = orgs.reduce((total, _, i) => total + outletArts(i, outlet).length, 0);
+    return `<td class="${count ? "" : "cell-zero"}">${count}</td>`;
+  }).join("");
+  function tvMatrixRows(outlets) {
+    return orgs.map((org, i) => `<tr>
+      <td style="color:${orgHex(i)};font-weight:600">${hEsc(org.name)}</td>
+      ${outlets.map((outlet) => `<td>${pressCountWithSources(outletArts(i, outlet))}</td>`).join("")}
+    </tr>`).join("");
   }
-  const pressPerOrg = orgs.map((org, i) => `<div class="press-org-block" id="press_${safeKey(org.name)}">
-    <div class="press-org-header" style="color:${orgHex(i)}">${hEsc(org.name)}</div>
-    <table class="inner-table"><thead><tr><th>Outlet</th><th>#</th><th>Articles</th></tr></thead><tbody>${pressOutletTable(i)}</tbody></table>
-  </div>`).join("");
-  function tvOutletTable(orgIdx) {
-    return [...TV_ENG_OUTLETS, ...TV_HIN_OUTLETS].map((out) => {
-      const arts = outletArts(orgIdx, out);
-      const label = OUTLET_LABELS[out] ?? out;
-      if (!arts.length) return `<tr><td>${hEsc(label)}</td><td class="cell-zero">0</td><td></td></tr>`;
-      const tags = [...new Set(arts.flatMap((a) => a.topics))].slice(0, 5).map((t) => `<span class="kw-tag">${hEsc(t)}</span>`).join(" ");
-      return `<tr><td>${hEsc(label)}</td><td style="color:var(--amber);font-weight:700">${arts.length}</td><td>${tags}</td></tr>`;
-    }).join("");
+  function tvMatrix(outlets, label) {
+    return `<div class="tv-matrix-section">
+      <div class="tv-matrix-title">${hEsc(label)}</div>
+      <div class="tv-matrix-wrap"><table class="data-table tv-matrix">
+        <thead><tr><th>Organisation</th>${outlets.map((outlet) => `<th>${hEsc(OUTLET_LABELS[outlet] ?? outlet)}</th>`).join("")}</tr></thead>
+        <tbody>${tvMatrixRows(outlets)}</tbody>
+      </table></div>
+    </div>`;
   }
-  const tvPerOrg = orgs.map((org, i) => `<div class="tv-org-block" id="tv_${safeKey(org.name)}">
-    <div class="tv-org-header"><span style="color:${orgHex(i)};font-weight:700">${hEsc(org.name)}</span><span class="tv-count-badge">${org.articles.filter((a) => a.type === "tv").length} TV mentions</span></div>
-    <table class="inner-table"><thead><tr><th>Channel</th><th>#</th><th>Topics</th></tr></thead><tbody>${tvOutletTable(i)}</tbody></table>
-    <div class="tv-topic-focus">${tvTopicFocus(i)}</div>
-  </div>`).join("");
+  const tvMatrices = `${tvMatrix(TV_ENG_OUTLETS, "English TV")}${tvMatrix(TV_HIN_OUTLETS, "Hindi TV")}`;
   function momentumRows() {
     return sorted.map((i) => {
       const wc = {};
@@ -21797,10 +21809,8 @@ function buildHTML(data) {
       }
       const cells = weeks.map((w) => {
         const arts = wc[w];
-        if (!arts.length) return `<td class="mom-cell">0</td>`;
-        const links = arts.map((a) => a.url ? `<a href="${hEsc(a.url)}" target="_blank">${hEsc(a.headline.slice(0, 60))}</a>` : hEsc(a.headline.slice(0, 60))).join("<br>");
-        const k = `mom_${safeKey(orgNames[i])}_${w.replace("-", "_")}`;
-        return `<td class="mom-cell amber-cell" onclick="td('${k}')">${arts.length}<div id="${k}" class="mom-popup" style="display:none">${links}</div></td>`;
+        if (!arts.length) return `<td class="mom-cell">${pressCountWithSources(arts)}</td>`;
+        return `<td class="mom-cell amber-cell">${pressCountWithSources(arts)}</td>`;
       }).join("");
       return `<tr><td style="color:${orgHex(i)};font-weight:600">${hEsc(orgNames[i])}</td>${cells}</tr>`;
     }).join("");
@@ -21916,12 +21926,12 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
 .section-desc{font-size:14px;color:var(--text-muted);margin-bottom:24px}
 .data-table{width:100%;border-collapse:collapse;font-size:14px}
 .data-table th{background:var(--surface2);color:var(--text-muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)}
-.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
 .data-table tr:hover td{background:rgba(201,146,42,.04)}
 .cohort-row td{color:var(--amber);font-weight:700;background:var(--surface2)}
 .inner-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
 .inner-table th{background:var(--surface3);color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;padding:7px 12px;text-align:left;border-bottom:1px solid var(--border)}
-.inner-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.inner-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 .inner-table tr:hover td{background:rgba(201,146,42,.03)}
 .rank-badge{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-weight:700;font-size:12px}
 .rank-1{background:rgba(212,160,20,.2);color:#d4a014}.rank-2{background:rgba(200,216,232,.12);color:#b0c4d8}.rank-3{background:rgba(180,120,80,.2);color:#c8956a}.rank-n{background:rgba(30,50,69,.8);color:var(--text-muted)}
@@ -21934,16 +21944,30 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
 .sov-seg{transition:flex .3s}.sov-seg-zero{flex:0 0 26px;background:#2a3548}
 .sov-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px}
 .sov-legend-item{display:flex;align-items:center;gap:6px;font-size:12px}
-.tv-org-block{margin-bottom:32px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px}
-.tv-org-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:16px}
-.tv-count-badge{background:var(--surface3);color:var(--text-muted);font-size:12px;padding:2px 8px;border-radius:12px}
-.topic-focus-empty{color:var(--text-muted);font-size:13px;font-style:italic;padding:8px 0}
-.tv-art{font-size:12px;margin-bottom:4px}
-.art-outlet{color:var(--text-muted);font-size:11px;margin-left:6px}.art-date{color:var(--text-muted);font-size:11px;margin-left:4px}
-.kw-tag{display:inline-block;background:var(--surface3);color:var(--text-muted);font-size:11px;padding:2px 7px;border-radius:10px;margin:2px}
-.mom-cell{text-align:center;cursor:pointer;font-size:13px;position:relative}
+.tv-heading-rule{width:40px;height:2px;background:var(--amber);margin:-10px 0 30px}
+.tv-matrix-section{margin-bottom:34px}
+.tv-matrix-title{color:var(--text-muted);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.tv-matrix-wrap{overflow-x:auto}
+.tv-matrix{min-width:800px}
+.tv-matrix th:first-child,.tv-matrix td:first-child{min-width:340px}
+.tv-matrix th:not(:first-child),.tv-matrix td:not(:first-child){min-width:150px}
+.mom-cell{text-align:center;font-size:13px;position:relative}
 .amber-cell{color:var(--amber);font-weight:700}.amber-cell:hover{background:rgba(201,146,42,.08)}
-.mom-popup{position:absolute;top:100%;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;min-width:260px;max-width:340px;z-index:50;text-align:left;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.press-count-with-sources{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:112px}
+.press-count-number{color:var(--text);font-weight:700;line-height:1.2}
+.press-sources-details{margin-top:5px;max-width:260px}
+.press-sources-details summary{list-style:none}.press-sources-details summary::-webkit-details-marker{display:none}
+.press-sources-below{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:5px}
+.press-sources-label{color:var(--text-muted);font-family:monospace;font-size:11px;font-weight:500;letter-spacing:.02em;white-space:nowrap;cursor:pointer;user-select:none}
+.press-sources-label:hover,.press-sources-details[open] .press-sources-label{color:var(--amber)}
+.press-source-link{display:block;color:var(--amber);font-size:11px;font-weight:500;line-height:1.35;overflow-wrap:anywhere;text-align:left}
+.press-source-text{color:var(--text-muted)}
+.mom-cell .press-count-with-sources{align-items:center;min-width:120px}
+.mom-cell .press-sources-details,.mom-cell .press-sources-below{align-items:flex-start;width:100%;text-align:left}
+.press-matrix-wrap{overflow-x:auto}
+.press-matrix{min-width:1120px}
+.press-matrix th:first-child,.press-matrix td:first-child{min-width:280px}
+.press-matrix th:not(:first-child),.press-matrix td:not(:first-child){min-width:155px}
 .tg{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .tg-header,.tg-row{display:grid;grid-template-columns:${tgCols}}
 .tg-header{background:var(--surface2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
@@ -21954,8 +21978,6 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
 .badge-owns{background:var(--good);color:#0a0e17;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
 .badge-con{background:var(--surface3);color:var(--text);font-size:11px;padding:2px 8px;border-radius:10px}
 .badge-absent{color:var(--text-muted);font-size:13px}
-.press-org-block{margin-bottom:24px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px}
-.press-org-header{font-weight:700;font-size:16px;margin-bottom:14px}
 .source-list{font-size:12px;line-height:1.8}
 .em-card{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:16px 20px;margin-bottom:12px}
 .em-topic{font-weight:700;color:var(--amber);margin-bottom:4px}.em-desc{color:var(--text);font-size:14px;margin-bottom:6px}
@@ -22019,27 +22041,28 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
       <div class="section-desc">Online and print mentions. Hover SoV bar segments to see org share.</div>
       ${sovBarHtml}
       <div class="sov-legend">${sovLegend}</div>
-      <table class="data-table">
+      <div class="press-matrix-wrap">
+      <table class="data-table press-matrix">
         <thead>
-          <tr><th>#</th><th>Organisation</th><th>Online</th><th>Print</th><th>Media Score</th><th>SoV%</th></tr>
-          <tr class="cohort-row"><td colspan="2">COHORT TOTAL</td><td>${orgs.reduce((a, o) => a + o.articles.filter((x) => x.type === "online").length, 0)}</td><td>${orgs.reduce((a, o) => a + o.articles.filter((x) => x.type === "print").length, 0)}</td><td>${r0(ms.reduce((a, b) => a + b, 0))}</td><td class="sov-cell">100%</td></tr>
+          <tr><th>Organisation</th>${PRINT_OUTLETS.map((outlet) => `<th>${hEsc(OUTLET_LABELS[outlet] ?? outlet)}</th>`).join("")}</tr>
         </thead>
-        <tbody>${pressSovRows}</tbody>
+        <tbody><tr class="cohort-row"><td>COHORT</td>${pressMatrixCohortCells}</tr>${pressMatrixRows}</tbody>
       </table>
-      <div style="margin-top:32px">${pressPerOrg}</div>
+      </div>
     </div>
 
     <div class="section" id="tv">
       <div class="section-num">02b</div>
       <div class="section-title">TV Channel Coverage</div>
-      <div class="section-desc">English and Hindi TV channel mentions with topic classification.</div>
-      ${tvPerOrg}
+      <div class="section-desc">AQ article mentions specifically in English TV (NDTV, News18, India Today) and Hindi TV (India TV, ABP News) channels.</div>
+      <div class="tv-heading-rule"></div>
+      ${tvMatrices}
     </div>
 
     <div class="section" id="momentum">
       <div class="section-num">02c</div>
       <div class="section-title">Coverage Momentum</div>
-      <div class="section-desc">Weekly press article counts. Click amber cells to see headlines.</div>
+      <div class="section-desc">Weekly press article counts. Click \u2197 sources below a count to expand its headlines.</div>
       <div style="overflow-x:auto">
         <table class="data-table">
           <thead><tr><th>Organisation</th>${weeks.map((w) => `<th>${w}</th>`).join("")}</tr></thead>
@@ -22192,13 +22215,14 @@ function buildReportSkeleton(orgs, date_from, date_to, clientName) {
   const navOrgItems = orgs.map(
     (o, i) => `<div style="display:flex;align-items:center;gap:6px;font-size:16px;color:var(--muted2);padding:3px 20px"><div style="width:8px;height:8px;border-radius:2px;background:${orgHex(i)}"></div>${hEsc(o)}</div>`
   ).join("");
+  const tvCell = (sk, channel) => `<td style="font-family:monospace"><div class="press-count-with-sources"><span class="press-count-number">{{${sk}_TV_${channel}}}</span>{{${sk}_TV_${channel}_SOURCES}}</div></td>`;
   const tvEngRows = orgs.map((o, i) => {
     const sk = safeKey(o);
-    return `<tr><td><span style="font-family:monospace;font-size:16px;font-weight:700;color:${orgHex(i)}">${hEsc(o)}</span></td><td style="font-family:monospace">{{${sk}_TV_NDTV}}</td><td style="font-family:monospace">{{${sk}_TV_NEWS18}}</td><td style="font-family:monospace">{{${sk}_TV_INDIATODAY}}</td></tr>`;
+    return `<tr><td><span style="font-family:monospace;font-size:16px;font-weight:700;color:${orgHex(i)}">${hEsc(o)}</span></td>${tvCell(sk, "NDTV")}${tvCell(sk, "NEWS18")}${tvCell(sk, "INDIATODAY")}</tr>`;
   }).join("\n");
   const tvHinRows = orgs.map((o, i) => {
     const sk = safeKey(o);
-    return `<tr><td><span style="font-family:monospace;font-size:16px;font-weight:700;color:${orgHex(i)}">${hEsc(o)}</span></td><td style="font-family:monospace">{{${sk}_TV_INDIATV}}</td><td style="font-family:monospace">{{${sk}_TV_ABP}}</td></tr>`;
+    return `<tr><td><span style="font-family:monospace;font-size:16px;font-weight:700;color:${orgHex(i)}">${hEsc(o)}</span></td>${tvCell(sk, "INDIATV")}${tvCell(sk, "ABP")}</tr>`;
   }).join("\n");
   const citationsHtml = orgs.map((o, i) => {
     const sk = safeKey(o);
@@ -22265,6 +22289,14 @@ body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line
 .nt th,.at th,.apt th{background:var(--surface3);padding:10px 14px;text-align:left;font-family:monospace;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
 .nt td,.at td,.apt td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
 .nt tr:hover td{background:var(--surface2)}
+.press-count-with-sources{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:112px}
+.press-count-number{color:var(--text);font-weight:700;line-height:1.2}
+.press-sources-details{margin-top:5px;max-width:260px}
+.press-sources-details summary{list-style:none}.press-sources-details summary::-webkit-details-marker{display:none}
+.press-sources-below{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:5px}
+.press-sources-label{color:var(--muted);font-family:monospace;font-size:13px;font-weight:500;letter-spacing:.02em;white-space:nowrap;cursor:pointer;user-select:none}
+.press-sources-label:hover,.press-sources-details[open] .press-sources-label{color:var(--amber)}
+.press-source-link{display:block;color:var(--amber);font-family:monospace;font-size:14px;font-weight:500;line-height:1.45;overflow-wrap:anywhere;text-align:left}
 .ctag{display:inline-flex;font-family:monospace;font-size:15px;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(201,146,42,.25);border-radius:3px;padding:1px 6px;cursor:pointer;text-decoration:none;vertical-align:middle;margin-left:4px}
 .evd{display:none;background:var(--ink);border:1px solid var(--border2);border-radius:5px;padding:12px 14px;margin-top:9px}
 .evd.open{display:block}
@@ -22567,16 +22599,21 @@ ${orgs.map((o, i) => `${hEsc(o)} \u2192 ${orgHex(i)}  safeKey=${safeKey(o)}`).jo
       <span style="font-family:monospace;color:{ORG_HEX};width:50px;text-align:right">{COUNT}</span>
     </div>
   </div>
-{{SOV_TABLE_HTML}}        table.nt with outlet columns: Org | TOI | HT | The Hindu | NDTV | News18 | India Today | India TV | ABP News | Total
+{{SOV_TABLE_HTML}}        table.nt with outlet columns: Org | TOI | HT | The Hindu | NDTV | News18 | India Today | India TV | ABP News | Total.
+  In every non-zero count cell, put a collapsed \u2197 sources control directly below the number. Clicking it expands all linked source headlines:
+  <div class="press-count-with-sources"><span class="press-count-number">{COUNT}</span><details class="press-sources-details"><summary class="press-sources-label">\u2197 sources</summary><div class="press-sources-below"><a class="press-source-link" href="{URL}" target="_blank" rel="noopener">{HEADLINE}</a></div></details></div>
+  Sources must expand inline below their number, never in popups, hover states, cards, or a separate column.
 {{PRESS_SENTINEL_HTML}}   green if all orgs have coverage, amber if any = 0
 
 ### Per-org TV (replace ORG with safeKey):
 {{ORG_TV_NDTV}} {{ORG_TV_NEWS18}} {{ORG_TV_INDIATODAY}} {{ORG_TV_INDIATV}} {{ORG_TV_ABP}}
-(integers; these tokens are in pre-built table rows in the skeleton)
+These are integer counts in the pre-built English and Hindi TV matrix rows.
+{{ORG_TV_NDTV_SOURCES}} {{ORG_TV_NEWS18_SOURCES}} {{ORG_TV_INDIATODAY_SOURCES}} {{ORG_TV_INDIATV_SOURCES}} {{ORG_TV_ABP_SOURCES}}
+For a non-zero count, replace its SOURCES token with the collapsed press-sources-details markup containing every linked headline. For zero, replace the SOURCES token with an empty string. TV sources must expand inline beneath the count; never use per-organisation cards.
 
 {{TV_ORG_TOPICS_HTML}}    per-org div with top 3 TV subtopics (border-left in org color)
 
-{{MOMENTUM_SECTION_HTML}} full <section class="sec" id="momentum">...</section> Section 02c
+{{MOMENTUM_SECTION_HTML}} full <section class="sec" id="momentum">...</section> Section 02c. Every non-zero weekly count must use the same collapsed press-count-with-sources details markup so source headlines expand inline when \u2197 sources is clicked. Never use popups or cards.
 
 ### Topic ownership
 {{TOPIC_CARDS_HTML}}      .tg grid, header + 21 topic rows. Leader=badge-owns, Active=badge-con, else muted dash.
