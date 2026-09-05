@@ -21576,29 +21576,30 @@ var ORG_COLORS_HEX = [
 var orgHex = (i) => "#" + ORG_COLORS_HEX[i % ORG_COLORS_HEX.length];
 var hEsc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 var safeKey = (s) => s.toUpperCase().replace(/[^A-Z0-9]/g, "_");
-var AQ_TOPICS = [
-  "NCAP",
-  "Policy",
-  "PM2.5 Exposure",
-  "Stubble Burning",
-  "Clean Air Finance",
-  "Vehicular Pollution",
-  "Health Impact",
-  "Industrial Pollution",
-  "Heat-AQI",
-  "Brick Kilns",
-  "Petrol Emissions",
-  "Diesel Emissions",
-  "Super Emitters",
-  "Thermal Power Plants",
-  "Household Pollution",
-  "Indoor Pollution",
-  "Biomass Air Pollution",
-  "Rice Residue Burning",
-  "Wheat Residue Burning",
-  "Road Dust",
-  "General AQ"
+var AQ_TOPIC_COLUMNS = [
+  { key: "NCAP", label: "NCAP / POLICY TARGETS" },
+  { key: "Policy", label: "POLICY & REGULATIONS" },
+  { key: "PM2.5 Exposure", label: "PM2.5 EXPOSURE MAPPING" },
+  { key: "Stubble Burning", label: "STUBBLE BURNING" },
+  { key: "Clean Air Finance", label: "CLEAN AIR FINANCE" },
+  { key: "Vehicular Pollution", label: "VEHICULAR POLLUTION" },
+  { key: "Health Impact", label: "HEALTH IMPACT" },
+  { key: "Industrial Pollution", label: "INDUSTRIAL POLLUTION" },
+  { key: "Heat-AQI", label: "HEAT-AQI INTERACTION" },
+  { key: "Brick Kilns", label: "BRICK KILNS" },
+  { key: "Petrol Emissions", label: "PETROL EMISSIONS" },
+  { key: "Diesel Emissions", label: "DIESEL EMISSIONS" },
+  { key: "Super Emitters", label: "SUPER EMITTERS" },
+  { key: "Thermal Power Plants", label: "THERMAL POWER PLANTS" },
+  { key: "Household Pollution", label: "HOUSEHOLD POLLUTION" },
+  { key: "Indoor Pollution", label: "INDOOR POLLUTION" },
+  { key: "Biomass Air Pollution", label: "BIOMASS AIR POLLUTION" },
+  { key: "Rice Residue Burning", label: "RICE RESIDUE BURNING" },
+  { key: "Wheat Residue Burning", label: "WHEAT RESIDUE BURNING" },
+  { key: "Road Dust", label: "ROAD DUST" },
+  { key: "General AQ", label: "GENERAL AIR QUALITY" }
 ];
+var AQ_TOPICS = AQ_TOPIC_COLUMNS.map((topic) => topic.key);
 var PRINT_OUTLETS = ["TOI", "HT", "TheHindu", "IndianExpress", "DeccanHerald"];
 var TV_ENG_OUTLETS = ["NDTV", "News18", "IndiaToday"];
 var TV_HIN_OUTLETS = ["IndiaTV", "ABP"];
@@ -21707,12 +21708,13 @@ function buildHTML(data) {
     s.setDate(d.getDate() - d.getDay());
     return `${String(s.getMonth() + 1).padStart(2, "0")}-${String(s.getDate()).padStart(2, "0")}`;
   }
-  function topicBadge(orgIdx, topic) {
+  function topicOwnershipCell(orgIdx, topic) {
     const arts = orgs[orgIdx].articles.filter((a) => a.topics.includes(topic));
-    if (!arts.length) return `<span class="badge-absent">\u2014</span>`;
-    const counts = orgs.map((o) => o.articles.filter((a) => a.topics.includes(topic)).length);
-    const isLead = arts.length === Math.max(...counts);
-    return isLead ? `<span class="badge-owns">LEADS</span>` : `<span class="badge-con">COVERS</span>`;
+    if (arts.length < 2) return `<span class="badge-absent">\u2014</span>`;
+    const isLeader = arts.length >= 5;
+    const label = isLeader ? "Leader" : "Active";
+    const badgeClass = isLeader ? "badge-owns" : "badge-con";
+    return `<div class="topic-cell-content"><span class="${badgeClass}">${label} \u00b7 ${arts.length}</span>${pressSourcesBelow(arts)}</div>`;
   }
   function outletArts(orgIdx, outlet) {
     const aliases = {
@@ -21893,7 +21895,6 @@ function buildHTML(data) {
       </div>`).join("") : `<div style="color:var(--text-muted);padding:24px">No emerging narratives identified.</div>`;
   const aeoQRef = AEO_QUESTIONS.map((q, i) => `<div class="aeo-q"><span class="aeo-qn">Q${i + 1}</span>${hEsc(q)}</div>`).join("");
   const costLine = data.monthly_cost_inr ? `<div class="cost-line">Report generation cost: \u20B9${data.monthly_cost_inr.toLocaleString("en-IN")}</div>` : "";
-  const tgCols = `250px${orgs.map(() => " 1fr").join("")}`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21990,16 +21991,19 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
 .press-matrix{min-width:1120px}
 .press-matrix th:first-child,.press-matrix td:first-child{min-width:280px}
 .press-matrix th:not(:first-child),.press-matrix td:not(:first-child){min-width:155px}
-.tg{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;overflow:hidden;min-width:920px}
-.tg-header,.tg-row{display:grid;grid-template-columns:${tgCols}}
-.tg-header{background:var(--surface2);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
-.tg-label-cell{padding:14px 18px;color:var(--text-muted);border-right:1px solid var(--border)}
-.tg-org-cell{padding:14px 18px;text-align:center;border-right:1px solid var(--border);font-weight:700;font-size:14px}
-.tg-row{border-top:1px solid var(--border)}.tg-row:hover{background:var(--surface2)}
-.tg-row .tg-label-cell{font-size:19px;line-height:1.3}
-.tg-cell{padding:14px 18px;text-align:center;border-right:1px solid var(--border);font-size:16px}
+.topic-map-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+.topic-map-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:monospace;font-size:16px}
+.topic-map-table th{width:165px;min-width:165px;background:var(--surface2);color:var(--text-muted);font-size:14px;font-weight:700;letter-spacing:.06em;line-height:1.45;padding:14px 15px;text-align:left;vertical-align:middle;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.topic-map-table th:first-child{position:sticky;left:0;z-index:3;width:360px;min-width:360px}
+.topic-map-table td{width:165px;min-width:165px;padding:12px 15px;text-align:left;vertical-align:top;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.topic-map-table tr:last-child td{border-bottom:none}.topic-map-table th:last-child,.topic-map-table td:last-child{border-right:none}
+.topic-map-table tbody tr:hover td{background:rgba(201,146,42,.035)}
+.topic-map-table .topic-org{position:sticky;left:0;z-index:2;width:360px;min-width:360px;background:var(--surface2);font-size:17px;font-weight:700}
+.topic-cell-content{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.topic-cell-content .press-sources-details{max-width:150px}
+.topic-cell-content .press-sources-label{display:inline-flex;padding:3px 8px;border:1px solid rgba(201,146,42,.35);border-radius:4px;background:rgba(201,146,42,.08);color:var(--amber);font-weight:700}
 .badge-owns{background:var(--good);color:#0a0e17;font-size:13px;font-weight:700;padding:3px 10px;border-radius:12px}
-.badge-con{background:var(--surface3);color:var(--text);font-size:13px;padding:3px 10px;border-radius:12px}
+.badge-con{background:rgba(201,146,42,.12);border:1px solid rgba(201,146,42,.4);color:#f6b91d;font-size:13px;font-weight:700;padding:3px 10px;border-radius:4px;white-space:nowrap}
 .badge-absent{color:var(--text-muted);font-size:18px}
 .source-list{font-size:12px;line-height:1.8}
 .em-card{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:16px 20px;margin-bottom:12px}
@@ -22100,13 +22104,14 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
     </div>
 
     <div class="section" id="topics">
-      <div class="section-num">03</div>
+      <div class="section-num">Section 03 \u2014 21 topics</div>
       <div class="section-title">Topic Ownership Map</div>
-      <div class="section-desc"><span class="badge-owns">LEADS</span> = most articles on topic &nbsp; <span class="badge-con">COVERS</span> = present &nbsp; <span class="badge-absent">\u2014</span> = absent</div>
-      <div style="overflow-x:auto"><div class="tg">
-        <div class="tg-header"><div class="tg-label-cell">Topic</div>${orgNames.map((n, i) => `<div class="tg-org-cell" style="color:${orgHex(i)}">${hEsc(n)}</div>`).join("")}</div>
-        ${AQ_TOPICS.map((topic) => `<div class="tg-row"><div class="tg-label-cell">${hEsc(topic)}</div>${orgs.map((_, i) => `<div class="tg-cell">${topicBadge(i, topic)}</div>`).join("")}</div>`).join("")}
-      </div></div>
+      <div class="section-desc">Each cell shows article count and representative headlines. Position: <span style="color:var(--good);font-weight:700">Leader</span> (\u22655 articles) \u00b7 <span style="color:#f6b91d;font-weight:700">Active</span> (2\u20134 articles) \u00b7 <strong>Not Present</strong> (0\u20131).</div>
+      <div class="momentum-heading-rule"></div>
+      <div class="topic-map-wrap"><table class="topic-map-table">
+        <thead><tr><th>ORG</th>${AQ_TOPIC_COLUMNS.map((topic) => `<th>${hEsc(topic.label)}</th>`).join("")}</tr></thead>
+        <tbody>${orgs.map((org, i) => `<tr><td class="topic-org" style="color:${orgHex(i)}">${hEsc(org.name)}</td>${AQ_TOPIC_COLUMNS.map((topic) => `<td>${topicOwnershipCell(i, topic.key)}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table></div>
     </div>
 
     <div class="section" id="appendix">
@@ -22234,7 +22239,6 @@ function dlEdit(){
 }
 function buildReportSkeleton(orgs, date_from, date_to, clientName) {
   const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const topicCols = "250px " + orgs.map(() => "1fr").join(" ");
   const cpCols = orgs.map(() => "1fr").join(" ");
   const orgChips = orgs.map((o, i) => {
     const hex = orgHex(i);
@@ -22303,16 +22307,19 @@ body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line
 .mch{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px}
 .ch-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
 .wbars{display:flex;gap:5px;align-items:flex-end;height:96px;margin-bottom:8px}
-.tg{display:grid;grid-template-columns:${topicCols};border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;font-size:19px}
-.tgh{background:var(--surface3);padding:14px 18px;font-family:monospace;font-size:16px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
-.tc{padding:14px 18px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
-.tc:nth-child(${orgs.length + 1}n){border-right:none}
-.tn{font-weight:600;color:var(--text);margin-bottom:3px}.cell-hl{font-size:16px;color:var(--muted);line-height:1.4;margin-top:5px}
-.owns{background:rgba(76,175,116,.06)}.con{background:rgba(61,142,240,.04)}
-.ob{display:inline-block;font-family:monospace;font-size:16px;font-weight:600;padding:2px 9px;border-radius:4px;margin-bottom:4px}
-.badge-owns{background:rgba(76,175,116,.15);color:var(--good);border:1px solid rgba(76,175,116,.3)}
-.badge-con{background:rgba(61,142,240,.1);color:#3d8ef0;border:1px solid rgba(61,142,240,.25)}
-.badge-absent{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
+.topic-map-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+.topic-map-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:monospace;font-size:16px}
+.topic-map-table th{width:165px;min-width:165px;background:var(--surface2);color:var(--muted);font-size:14px;font-weight:700;letter-spacing:.06em;line-height:1.45;padding:14px 15px;text-align:left;vertical-align:middle;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.topic-map-table th:first-child{position:sticky;left:0;z-index:3;width:360px;min-width:360px}
+.topic-map-table td{width:165px;min-width:165px;padding:12px 15px;text-align:left;vertical-align:top;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.topic-map-table tr:last-child td{border-bottom:none}.topic-map-table th:last-child,.topic-map-table td:last-child{border-right:none}
+.topic-map-table tbody tr:hover td{background:rgba(201,146,42,.035)}
+.topic-map-table .topic-org{position:sticky;left:0;z-index:2;width:360px;min-width:360px;background:var(--surface2);font-size:17px;font-weight:700}
+.topic-cell-content{display:flex;flex-direction:column;align-items:flex-start;gap:2px}.topic-cell-content .press-sources-details{max-width:150px}
+.topic-cell-content .press-sources-label{display:inline-flex;padding:3px 8px;border:1px solid rgba(201,146,42,.35);border-radius:4px;background:rgba(201,146,42,.08);color:var(--amber);font-weight:700}
+.badge-owns{background:rgba(76,175,116,.15);color:var(--good);border:1px solid rgba(76,175,116,.3);font-family:monospace;font-size:13px;font-weight:700;padding:3px 10px;border-radius:4px;white-space:nowrap}
+.badge-con{background:rgba(201,146,42,.12);color:#f6b91d;border:1px solid rgba(201,146,42,.4);font-family:monospace;font-size:13px;font-weight:700;padding:3px 10px;border-radius:4px;white-space:nowrap}
+.badge-absent{color:var(--muted);font-size:18px}
 .nt,.at,.apt{width:100%;border-collapse:collapse;font-size:17px;margin-bottom:16px}
 .nt th,.at th,.apt th{background:var(--surface3);padding:10px 14px;text-align:left;font-family:monospace;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
 .nt td,.at td,.apt td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
@@ -22394,7 +22401,7 @@ body.edit-mode [contenteditable="true"]:focus{outline:1.5px solid rgba(201,146,4
   .rh{padding:32px 0 28px;margin-bottom:32px}
   .rt{font-size:33px}.st{font-size:27px}.sd{font-size:17px}
   .cp,.scc,.mg{grid-template-columns:1fr}
-  .tg{grid-template-columns:1fr!important}
+  .topic-map-table th:first-child,.topic-map-table .topic-org{width:280px;min-width:280px}
   .ch-hdr{flex-direction:column;gap:8px}
   .wbars{height:64px}.fc{flex-direction:column;gap:10px}.fn{font-size:31px}
   .em-hdr{flex-direction:column;gap:6px}.scg{font-size:37px}
@@ -22483,7 +22490,7 @@ ${tvHinRows}
 </section>
 {{MOMENTUM_SECTION_HTML}}
 <section class="sec" id="topics"><div class="sh"><div class="se">Section 03 \u2014 21 topics</div><h2 class="st">Topic Ownership Map</h2>
-<div class="sd">Each article classified into one of 21 fixed AQ sub-topics. <strong style="color:#4ade80">Leader</strong> (\u22655) &middot; <strong style="color:#fbbf24">Active</strong> (2\u20134) &middot; <strong style="color:var(--muted)">Not Present</strong> (0\u20131).</div><div class="sdiv"></div></div>
+<div class="sd">Each cell shows article count and representative headlines. Position: <strong style="color:#4ade80">Leader</strong> (\u22655 articles) &middot; <strong style="color:#fbbf24">Active</strong> (2\u20134 articles) &middot; <strong style="color:var(--muted)">Not Present</strong> (0\u20131).</div><div class="sdiv"></div></div>
 {{TOPIC_CARDS_HTML}}
 </section>
 <section class="sec" id="appendix"><div class="sh"><div class="se">Section 04</div><h2 class="st">Citations</h2><div class="sd">All indexed articles from tracked outlets. Verify any claim by following the URL.</div><div class="sdiv"></div></div>
@@ -22659,11 +22666,15 @@ For a non-zero count, replace its SOURCES token with the collapsed press-sources
 {{MOMENTUM_SECTION_HTML}} full <section class="sec" id="momentum">...</section> Section 02c. Match the report's fixed Coverage Momentum design: heading and amber divider, followed by one .momentum-card titled "Weekly article volume \u2014 AQ-scoped" with the report date range. Inside it, use one .momentum-table with Organisation | Total | weekly date columns, a first aggregate row labelled "Press (all orgs)", then organisation rows sorted by Total descending. Show zero weekly values as <span class="momentum-zero">\u00b7</span> and non-zero values as <span class="momentum-heat" style="color:{ORG_HEX}">{COUNT}</span>. Put the existing collapsed press-sources-details control directly below each non-zero organisation count so headlines expand inline. Do not create per-organisation cards, popups, or hover-only sources.
 
 ### Topic ownership
-{{TOPIC_CARDS_HTML}}      one large .tg ownership grid (never separate cards), with a header + 21 generously spaced topic rows. Use the larger fixed typography and padding from the skeleton. Leader=badge-owns, Active=badge-con, else muted dash.
-  Topics: NCAP, Policy, PM2.5 Exposure, Stubble Burning, Clean Air Finance, Vehicular Pollution,
-  Health Impact, Industrial Pollution, Heat-AQI, Brick Kilns, Petrol Emissions, Diesel Emissions,
-  Super Emitters, Thermal Power Plants, Household Pollution, Indoor Pollution,
-  Biomass Air Pollution, Rice Residue Burning, Wheat Residue Burning, Road Dust, General AQ
+{{TOPIC_CARDS_HTML}}      one horizontally scrollable .topic-map-table inside .topic-map-wrap (never separate cards). Organisations are rows; the 21 exact keyword labels below are columns in this exact order. Keep the first ORG column sticky. Each cell uses its corresponding internal classification key, shows Leader \u00b7 {COUNT} for \u22655 articles, Active \u00b7 {COUNT} for 2\u20134, and a muted dash for 0\u20131. Leader uses badge-owns; Active uses badge-con. Put a collapsed press-sources-details list beneath every non-dash count.
+  Exact visible column labels (internal key in parentheses):
+  NCAP / POLICY TARGETS (NCAP); POLICY & REGULATIONS (Policy); PM2.5 EXPOSURE MAPPING (PM2.5 Exposure);
+  STUBBLE BURNING (Stubble Burning); CLEAN AIR FINANCE (Clean Air Finance); VEHICULAR POLLUTION (Vehicular Pollution);
+  HEALTH IMPACT (Health Impact); INDUSTRIAL POLLUTION (Industrial Pollution); HEAT-AQI INTERACTION (Heat-AQI);
+  BRICK KILNS (Brick Kilns); PETROL EMISSIONS (Petrol Emissions); DIESEL EMISSIONS (Diesel Emissions);
+  SUPER EMITTERS (Super Emitters); THERMAL POWER PLANTS (Thermal Power Plants); HOUSEHOLD POLLUTION (Household Pollution);
+  INDOOR POLLUTION (Indoor Pollution); BIOMASS AIR POLLUTION (Biomass Air Pollution); RICE RESIDUE BURNING (Rice Residue Burning);
+  WHEAT RESIDUE BURNING (Wheat Residue Burning); ROAD DUST (Road Dust); GENERAL AIR QUALITY (General AQ).
 
 ### Per-org citations (skeletons already in HTML):
 {{ORG_TOTAL}}   e.g. {{CEEW_TOTAL}} = 12
