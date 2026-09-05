@@ -21743,13 +21743,37 @@ function buildHTML(data) {
     return `<span class="rank-badge ${cls}">${r}</span>`;
   }
   function citationsHTML() {
-    const items = [];
-    let idx = 1;
-    for (const org of orgs) for (const a of org.articles) {
-      if (!a.url) continue;
-      items.push(`<div class="cite-row"><span class="cite-n">[${idx++}]</span><a href="${hEsc(a.url)}" target="_blank">${hEsc(a.headline)}</a><span class="cite-outlet">${hEsc(a.outlet)} \xB7 ${a.date}</span></div>`);
-    }
-    return items.length ? items.join("") : `<div style="color:var(--text-muted)">No source URLs provided.</div>`;
+    const formatDate = (dateValue) => {
+      const parts = String(dateValue ?? "").split("-").map(Number);
+      if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) return String(dateValue ?? "\u2014");
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${months[parts[1] - 1] ?? ""} ${parts[2]}, ${parts[0]}`.trim();
+    };
+    const classificationLabel = (article) => article.classification || ({ online: "Online Coverage", print: "Print Coverage", tv: "TV Coverage" }[article.type] ?? "Coverage");
+    return orgs.map((org, orgIdx) => {
+      const rows = org.articles.map((article, articleIdx) => {
+        const keywords = article.keywords?.length ? article.keywords : article.topics;
+        const keywordTags = keywords.length ? keywords.map((keyword) => `<span class="citation-keyword">${hEsc(keyword)}</span>`).join("") : `<span class="citation-empty">\u2014</span>`;
+        const url = article.url ? `<a class="citation-url" href="${hEsc(article.url)}" target="_blank" rel="noopener">link</a>` : `<span class="citation-empty">\u2014</span>`;
+        return `<tr>
+          <td>${articleIdx + 1}</td>
+          <td>${hEsc(article.outlet)}</td>
+          <td class="citation-date">${formatDate(article.date)}</td>
+          <td class="citation-headline">${hEsc(article.headline)}</td>
+          <td><span class="citation-classification">${hEsc(classificationLabel(article))}</span></td>
+          <td><div class="citation-keywords">${keywordTags}</div></td>
+          <td>${url}</td>
+        </tr>`;
+      }).join("");
+      const emptyRow = `<tr><td colspan="7" class="citation-empty-row">No articles in this report period.</td></tr>`;
+      return `<details class="citation-group" ${orgIdx === 0 ? "open" : ""}>
+        <summary class="citation-summary"><span><strong>${hEsc(org.name)}</strong><span class="citation-count"> \u2014 ${org.articles.length} article${org.articles.length === 1 ? "" : "s"}</span></span><span class="citation-chevron">\u25be</span></summary>
+        <div class="citation-table-wrap"><table class="citation-table">
+          <thead><tr><th>#</th><th>Outlet</th><th>Date</th><th>Headline</th><th>Classification</th><th>Keywords</th><th>URL</th></tr></thead>
+          <tbody>${rows || emptyRow}</tbody>
+        </table></div>
+      </details>`;
+    }).join("");
   }
   function pressSourcesBelow(articles) {
     if (!articles.length) return "";
@@ -22021,8 +22045,21 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
 .exec-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:20px}
 .finding-row{padding:10px 0;border-bottom:1px solid var(--border)}.finding-row:last-child{border-bottom:none}
 .finding-hl{font-weight:600;color:var(--text);margin-bottom:2px}.finding-det{font-size:13px;color:var(--text-muted)}
-.cite-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;align-items:baseline}
-.cite-n{font-weight:700;color:var(--text-muted);min-width:36px}.cite-outlet{color:var(--text-muted);margin-left:8px;white-space:nowrap}
+.citation-group{border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;background:var(--ink)}
+.citation-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 18px;background:var(--surface2);color:var(--text);cursor:pointer;list-style:none;user-select:none;font-size:18px}
+.citation-summary::-webkit-details-marker{display:none}.citation-summary::marker{display:none}
+.citation-count{color:var(--text-muted);font-weight:400}.citation-chevron{color:var(--text-muted);font-size:14px;transition:transform .15s}
+.citation-group[open] .citation-chevron{transform:rotate(180deg)}
+.citation-table-wrap{overflow-x:auto}
+.citation-table{width:100%;min-width:1180px;border-collapse:collapse;font-family:monospace;font-size:15px}
+.citation-table th{background:var(--surface2);color:var(--text-muted);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.citation-table td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:top}.citation-table tbody tr:last-child td{border-bottom:none}
+.citation-table th:nth-child(1),.citation-table td:nth-child(1){width:54px}.citation-table th:nth-child(2),.citation-table td:nth-child(2){width:150px}
+.citation-table th:nth-child(3),.citation-table td:nth-child(3){width:140px}.citation-table th:nth-child(4),.citation-table td:nth-child(4){min-width:310px}
+.citation-table th:nth-child(5),.citation-table td:nth-child(5){width:180px}.citation-table th:nth-child(6),.citation-table td:nth-child(6){min-width:240px}.citation-table th:nth-child(7),.citation-table td:nth-child(7){width:90px}
+.citation-date{white-space:nowrap}.citation-headline{color:var(--text);line-height:1.55}.citation-classification{color:var(--good)}
+.citation-keywords{display:flex;flex-wrap:wrap;gap:6px}.citation-keyword{display:inline-flex;padding:1px 6px;border:1px solid rgba(61,142,240,.35);border-radius:4px;background:rgba(61,142,240,.08);color:var(--blue);font-size:12px;line-height:1.5}
+.citation-url{color:var(--amber);font-weight:700}.citation-empty{color:var(--text-muted)}.citation-empty-row{color:var(--text-muted);text-align:center!important;padding:24px!important}
 .edit-bar{position:fixed;top:12px;right:16px;display:flex;gap:8px;z-index:1000;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
 .edit-btn{background:var(--surface3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}
 .edit-btn.on{background:var(--amber);color:var(--ink)}
@@ -22258,13 +22295,13 @@ function buildReportSkeleton(orgs, date_from, date_to, clientName) {
   }).join("\n");
   const citationsHtml = orgs.map((o, i) => {
     const sk = safeKey(o);
-    return `<details ${i === 0 ? "open" : ""} style="border:1px solid var(--border);border-radius:6px;margin-bottom:8px;overflow:hidden">
-<summary style="padding:10px 16px;cursor:pointer;background:var(--surface2);display:flex;align-items:center;justify-content:space-between;list-style:none;user-select:none">
-  <span style="font-size:18px;font-weight:600;color:var(--text)">${hEsc(o)} <span style="color:var(--muted);font-weight:400">&mdash; {{${sk}_TOTAL}} articles</span></span>
-  <span style="font-family:monospace;font-size:15px;color:var(--muted)">&#9662;</span>
+    return `<details class="citation-group" ${i === 0 ? "open" : ""}>
+<summary class="citation-summary">
+  <span><strong>${hEsc(o)}</strong><span class="citation-count"> &mdash; {{${sk}_TOTAL}} articles</span></span>
+  <span class="citation-chevron">&#9662;</span>
 </summary>
-<div style="padding:0 0 4px">
-<table class="apt"><thead><tr><th>#</th><th>Outlet</th><th>Date</th><th>Headline</th><th>Classification</th><th>Keywords</th><th>URL</th></tr></thead><tbody>{{${sk}_ARTICLE_ROWS}}</tbody></table>
+<div class="citation-table-wrap">
+<table class="citation-table"><thead><tr><th>#</th><th>Outlet</th><th>Date</th><th>Headline</th><th>Classification</th><th>Keywords</th><th>URL</th></tr></thead><tbody>{{${sk}_ARTICLE_ROWS}}</tbody></table>
 </div></details>`;
   }).join("\n");
   const CSS = `:root{--ink:#0a0e17;--surface:#111520;--surface2:#181e2e;--surface3:#1e2638;--border:#252d40;--border2:#6b7e9a;--text:#d8e4f0;--muted:#5e7494;--muted2:#8fa3b8;--amber:#c9922a;--amber-dim:rgba(201,146,42,.12);--amber-glow:rgba(201,146,42,.06);--good:#4caf74;--warn:#d4a017;--bad:#e05c5c}
@@ -22332,6 +22369,17 @@ body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line
 .press-sources-label{color:var(--muted);font-family:monospace;font-size:13px;font-weight:500;letter-spacing:.02em;white-space:nowrap;cursor:pointer;user-select:none}
 .press-sources-label:hover,.press-sources-details[open] .press-sources-label{color:var(--amber)}
 .press-source-link{display:block;color:var(--amber);font-family:monospace;font-size:14px;font-weight:500;line-height:1.45;overflow-wrap:anywhere;text-align:left}
+.citation-group{border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;background:var(--ink)}
+.citation-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 18px;background:var(--surface2);color:var(--text);cursor:pointer;list-style:none;user-select:none;font-size:18px}
+.citation-summary::-webkit-details-marker{display:none}.citation-summary::marker{display:none}
+.citation-count{color:var(--muted);font-weight:400}.citation-chevron{color:var(--muted);font-size:14px;transition:transform .15s}.citation-group[open] .citation-chevron{transform:rotate(180deg)}
+.citation-table-wrap{overflow-x:auto}.citation-table{width:100%;min-width:1180px;border-collapse:collapse;font-family:monospace;font-size:15px}
+.citation-table th{background:var(--surface2);color:var(--muted);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.citation-table td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:top}.citation-table tbody tr:last-child td{border-bottom:none}
+.citation-table th:nth-child(1),.citation-table td:nth-child(1){width:54px}.citation-table th:nth-child(2),.citation-table td:nth-child(2){width:150px}.citation-table th:nth-child(3),.citation-table td:nth-child(3){width:140px}.citation-table th:nth-child(4),.citation-table td:nth-child(4){min-width:310px}.citation-table th:nth-child(5),.citation-table td:nth-child(5){width:180px}.citation-table th:nth-child(6),.citation-table td:nth-child(6){min-width:240px}.citation-table th:nth-child(7),.citation-table td:nth-child(7){width:90px}
+.citation-date{white-space:nowrap}.citation-headline{color:var(--text);line-height:1.55}.citation-classification{color:var(--good)}
+.citation-keywords{display:flex;flex-wrap:wrap;gap:6px}.citation-keyword{display:inline-flex;padding:1px 6px;border:1px solid rgba(61,142,240,.35);border-radius:4px;background:rgba(61,142,240,.08);color:#3d8ef0;font-size:12px;line-height:1.5}
+.citation-url{color:var(--amber);font-weight:700}.citation-empty{color:var(--muted)}.citation-empty-row{color:var(--muted);text-align:center!important;padding:24px!important}
 .momentum-heading-rule{width:50px;height:2px;background:var(--amber);margin:-10px 0 30px}
 .momentum-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:24px 26px;overflow:hidden}
 .momentum-card-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:2px}
@@ -22406,7 +22454,7 @@ body.edit-mode [contenteditable="true"]:focus{outline:1.5px solid rgba(201,146,4
   .wbars{height:64px}.fc{flex-direction:column;gap:10px}.fn{font-size:31px}
   .em-hdr{flex-direction:column;gap:6px}.scg{font-size:37px}
   .edit-bar{top:8px;right:8px;gap:5px}
-  .nt,.at,.apt{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .nt,.at,.apt,.citation-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
   #score table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
 }
 @media(max-width:480px){
@@ -22678,7 +22726,7 @@ For a non-zero count, replace its SOURCES token with the collapsed press-sources
 
 ### Per-org citations (skeletons already in HTML):
 {{ORG_TOTAL}}   e.g. {{CEEW_TOTAL}} = 12
-{{ORG_ARTICLE_ROWS}}  <tr> rows per article
+{{ORG_ARTICLE_ROWS}}  <tr> rows per article for the expandable organisation accordion. Preserve the exact column order: # | Outlet | Date | Headline | Classification | Keywords | URL. Use .citation-date, .citation-headline, .citation-classification, a .citation-keywords wrapper containing one .citation-keyword per keyword, and a .citation-url link labelled "link". For an organisation with no articles, insert one <tr><td colspan="7" class="citation-empty-row">No articles in this report period.</td></tr>. Do not remove the surrounding <details> accordion.
 
 ### Emerging narratives
 {{EMERGING_COUNT}} {{EMERGING_COUNT_PLURAL}} {{EMERGING_HTML}}
@@ -22723,6 +22771,8 @@ var RdArticleSchema = external_exports.object({
   outlet: external_exports.string(),
   date: external_exports.string().describe("YYYY-MM-DD"),
   topics: external_exports.array(external_exports.string()).default([]),
+  classification: external_exports.string().optional().describe('Citation classification label, e.g. "Data Cited"'),
+  keywords: external_exports.array(external_exports.string()).optional().describe("Citation keyword tags; defaults to topics when omitted"),
   type: external_exports.enum(["online", "print", "tv"])
 });
 var RdSocialSchema = external_exports.object({
