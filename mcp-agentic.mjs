@@ -21847,16 +21847,44 @@ function buildHTML(data) {
     }).join("");
   }
   const momentumAggregateCells = weeks.map((week) => `<td class="momentum-week-cell momentum-aggregate-count">${momentumWeeklyTotals[week] || `<span class="momentum-zero">·</span>`}</td>`).join("");
+  function aeoModelKey(model) {
+    const key = String(model ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (key.includes("claude") || key.includes("anthropic") || key.includes("sonnet")) return "claude";
+    if (key.includes("perplexity") || key.includes("sonar")) return "perplexity";
+    if (key.includes("gpt") || key.includes("openai")) return "gpt4oMini";
+    return null;
+  }
+  const aeoSummary = orgs.map((org) => {
+    const questions = { claude: /* @__PURE__ */ new Set(), perplexity: /* @__PURE__ */ new Set(), gpt4oMini: /* @__PURE__ */ new Set() };
+    for (const mention of org.aeo_mentions) {
+      const model = aeoModelKey(mention.model);
+      if (model) questions[model].add(mention.question_n);
+    }
+    const claude = questions.claude.size;
+    const perplexity = questions.perplexity.size;
+    const gpt4oMini = questions.gpt4oMini.size;
+    return { claude, perplexity, gpt4oMini, total: claude + perplexity + gpt4oMini };
+  });
+  const aeoOrder = orgs.map((_, i) => i).sort((a, b) => aeoSummary[b].total - aeoSummary[a].total || orgNames[a].localeCompare(orgNames[b]));
+  const aeoCohort = aeoSummary.reduce((totals, item) => ({
+    claude: totals.claude + item.claude,
+    perplexity: totals.perplexity + item.perplexity,
+    gpt4oMini: totals.gpt4oMini + item.gpt4oMini,
+    total: totals.total + item.total
+  }), { claude: 0, perplexity: 0, gpt4oMini: 0, total: 0 });
+  function aeoModelCount(count) {
+    return `<span class="aeo-model-count ${count ? "" : "is-zero"}">${count}/15</span>`;
+  }
   function aeoRows() {
-    return sorted.map((i) => {
-      const mList = orgs[i].aeo_mentions;
-      const notable = mList.slice(0, 2).map((m) => `Q${m.question_n} (${hEsc(m.model)}): ${hEsc(m.context.slice(0, 80))}`).join("; ") || "\u2014";
+    return aeoOrder.map((i, orderIdx) => {
+      const summary = aeoSummary[i];
       return `<tr>
-        <td>${rankBadge(ranks[i])}</td>
-        <td style="color:${orgHex(i)};font-weight:600">${hEsc(orgNames[i])}</td>
-        <td>${mList.length}</td>
-        <td><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${Math.min(aes[i], 100)}%;background:var(--amber)"></div></div><span class="score-val">${r0(aes[i])}</span></div></td>
-        <td style="font-size:12px;color:var(--text-muted)">${hEsc(notable)}</td>
+        <td class="aeo-rank">#${orderIdx + 1}</td>
+        <td class="aeo-org" style="color:${orgHex(i)}">${hEsc(orgNames[i])}</td>
+        <td class="aeo-total" style="color:${orgHex(i)}">${summary.total}</td>
+        <td>${aeoModelCount(summary.claude)}</td>
+        <td>${aeoModelCount(summary.perplexity)}</td>
+        <td>${aeoModelCount(summary.gpt4oMini)}</td>
       </tr>`;
     }).join("");
   }
@@ -22037,6 +22065,19 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
 .em-sources{margin-top:8px;display:flex;flex-direction:column;gap:4px}.em-src-link{font-size:12px;color:var(--amber)}
 .aeo-q{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
 .aeo-qn{font-weight:700;color:var(--amber);min-width:28px}
+.aeo-heading-rule{width:50px;height:2px;background:var(--amber);margin:-10px 0 30px}
+.aeo-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+.aeo-table{width:100%;min-width:900px;border-collapse:collapse;font-family:monospace;font-size:16px}
+.aeo-table th{background:var(--surface2);color:var(--text-muted);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:13px 18px;text-align:center;border-bottom:1px solid var(--border)}
+.aeo-table th:nth-child(2){text-align:left}.aeo-table th:nth-child(3){color:var(--amber)}
+.aeo-table td{padding:14px 18px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}.aeo-table tbody tr:last-child td{border-bottom:none}
+.aeo-table tbody tr:hover td{background:rgba(201,146,42,.035)}
+.aeo-rank{width:110px;color:var(--text);font-weight:700}.aeo-org{text-align:left!important;min-width:350px;font-weight:700}.aeo-total{font-size:18px;font-weight:800}
+.aeo-cohort td{color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.06em}.aeo-cohort .aeo-total{color:var(--amber)}
+.aeo-model-count{color:var(--amber);font-size:17px;font-weight:800}.aeo-model-count.is-zero{color:var(--text-muted)}
+.aeo-evidence{margin-top:18px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);overflow:hidden}
+.aeo-evidence summary{padding:12px 16px;color:var(--text-muted);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;list-style:none}.aeo-evidence summary::-webkit-details-marker{display:none}
+.aeo-evidence summary:hover,.aeo-evidence[open] summary{color:var(--amber)}.aeo-evidence-list{padding:0 18px 14px}
 .action-card{background:var(--surface2);border:1px solid var(--border);border-left:4px solid;border-radius:8px;padding:16px 20px;margin-bottom:12px}
 .action-meta{display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap}
 .action-org-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px}
@@ -22166,20 +22207,15 @@ a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
     </div>
 
     <div class="section" id="aeo">
-      <div class="section-num">06</div>
+      <div class="section-num">Section 06 \u2014 LLM Visibility</div>
       <div class="section-title">LLM Visibility</div>
-      <div class="section-desc">How often each organisation is cited when AI tools answer air quality questions.</div>
-      <table class="data-table" style="margin-bottom:32px">
-        <thead>
-          <tr><th>#</th><th>Organisation</th><th>AI Mentions</th><th>AEO Score</th><th>Notable Citations</th></tr>
-          <tr class="cohort-row"><td colspan="2">COHORT TOTAL</td><td>${orgs.reduce((a, o) => a + o.aeo_mentions.length, 0)}</td><td>${r0(aes.reduce((a, b) => a + b, 0))}</td><td>\u2014</td></tr>
-        </thead>
-        <tbody>${aeoRows()}</tbody>
-      </table>
-      <div class="exec-box">
-        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px">15 Standard AEO Questions</div>
-        ${aeoQRef}
-      </div>
+      <div class="section-desc">When someone asks an AI model about Indian air quality, which organisations does it cite? 15 questions sent to 3 LLMs. Each time an org is named in a response, it counts as one mention. \u2713 = cited \u00b7 \u2715 = not cited.</div>
+      <div class="aeo-heading-rule"></div>
+      <div class="aeo-table-wrap"><table class="aeo-table">
+        <thead><tr><th>Rank</th><th>Org</th><th>Total</th><th>Claude</th><th>Perplexity</th><th>GPT-4o mini</th></tr></thead>
+        <tbody><tr class="aeo-cohort"><td>Cohort</td><td class="aeo-org">Cohort</td><td class="aeo-total">${aeoCohort.total}</td><td>${aeoCohort.claude}</td><td>${aeoCohort.perplexity}</td><td>${aeoCohort.gpt4oMini}</td></tr>${aeoRows()}</tbody>
+      </table></div>
+      <details class="aeo-evidence"><summary>15 standard AEO questions \u2014 expand reference</summary><div class="aeo-evidence-list">${aeoQRef}</div></details>
     </div>
 
     <div class="section" id="social">
@@ -22410,6 +22446,19 @@ body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);line
 .cqv{background:var(--surface3);border-left:2px solid var(--muted)}
 .cqet{font-family:monospace;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px}
 .cqd .cqet{color:var(--good)}.cqv .cqet{color:var(--muted)}.cqetx{color:var(--text);font-family:monospace;font-size:16px}
+.aeo-heading-rule{width:50px;height:2px;background:var(--amber);margin:-10px 0 30px}
+.aeo-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+.aeo-table{width:100%;min-width:900px;border-collapse:collapse;font-family:monospace;font-size:16px}
+.aeo-table th{background:var(--surface2);color:var(--muted2);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:13px 18px;text-align:center;border-bottom:1px solid var(--border)}
+.aeo-table th:nth-child(2){text-align:left}.aeo-table th:nth-child(3){color:var(--amber)}
+.aeo-table td{padding:14px 18px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}.aeo-table tbody tr:last-child td{border-bottom:none}.aeo-table tbody tr:hover td{background:rgba(201,146,42,.035)}
+.aeo-rank{width:110px;color:var(--text);font-weight:700}.aeo-org{text-align:left!important;min-width:350px;font-weight:700}.aeo-total{font-size:18px;font-weight:800}
+.aeo-cohort td{color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.06em}.aeo-cohort .aeo-total{color:var(--amber)}
+.aeo-model-count{color:var(--amber);font-size:17px;font-weight:800}.aeo-model-count.is-zero{color:var(--muted)}
+.aeo-evidence{margin-top:18px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);overflow:hidden}
+.aeo-evidence summary{padding:12px 16px;color:var(--muted2);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;list-style:none}.aeo-evidence summary::-webkit-details-marker{display:none}
+.aeo-evidence summary:hover,.aeo-evidence[open] summary{color:var(--amber)}.aeo-evidence-list{padding:0 18px 14px}
+.aeo-q{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}.aeo-qn{font-weight:700;color:var(--amber);min-width:28px}
 .em-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin-bottom:12px}
 .em-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px}
 .em-topic{font-size:19px;font-weight:600;color:var(--text)}
@@ -22551,8 +22600,8 @@ ${citationsHtml}
 </div>
 <div id="em-body">{{EMERGING_HTML}}</div>
 </section>
-<section class="sec" id="aeo"><div class="sh"><div class="se">Section 06</div><h2 class="st">LLM Visibility</h2>
-<div class="sd">How often each organisation is cited when AI models (GPT-4o, Perplexity, Gemini) answer Indian air quality questions. Probed with 15 standard questions per LLM.</div><div class="sdiv"></div></div>
+<section class="sec" id="aeo"><div class="sh"><div class="se">Section 06 \u2014 LLM Visibility</div><h2 class="st">LLM Visibility</h2>
+<div class="sd">When someone asks an AI model about Indian air quality, which organisations does it cite? 15 questions sent to 3 LLMs. Each time an org is named in a response, it counts as one mention. \u2713 = cited &middot; \u2715 = not cited.</div><div class="sdiv"></div></div>
 {{AEO_HTML}}
 </section>
 <section class="sec" id="social"><div class="sh"><div class="se">Section 07 &middot; ${hEsc(date_from)} \u2192 ${hEsc(date_to)}</div><h2 class="st">Social Media Presence</h2><div class="sd">AQ post frequency and engagement rates across LinkedIn, X/Twitter, Instagram, and YouTube.</div><div class="sdiv"></div></div>
@@ -22732,7 +22781,7 @@ For a non-zero count, replace its SOURCES token with the collapsed press-sources
 {{EMERGING_COUNT}} {{EMERGING_COUNT_PLURAL}} {{EMERGING_HTML}}
 
 ### AEO section
-{{AEO_HTML}}  Include: ranking bar + per-org .cqp cards (mention count, llm breakdown) + 15 questions
+{{AEO_HTML}}  one summary-first AEO block matching the fixed design. Begin with .aeo-table-wrap containing one .aeo-table with the exact columns Rank | Org | Total | Claude | Perplexity | GPT-4o mini. The first tbody row is .aeo-cohort and shows cohort totals for all four numeric columns. Follow with organisation rows sorted by combined Total descending and ranked #1, #2, etc. Each per-model organisation value is {COUNT}/15 using .aeo-model-count; add .is-zero when zero. Normalise model names: Claude/Anthropic/Sonnet = Claude, Perplexity/Sonar = Perplexity, GPT/OpenAI = GPT-4o mini. Count unique question numbers per model. Place the 15 canonical questions below the table inside a collapsed <details class="aeo-evidence"> with .aeo-evidence-list; do not use ranking bars or per-organisation cards.
 
 ### Social section
 {{SOCIAL_HTML}}  table.nt: # | Org | LI Posts | LI ER% | LI Flw | X Posts | X ER% | X Flw | IG Posts | IG ER% | IG Flw | YT Videos | YT Subs | Social Score
