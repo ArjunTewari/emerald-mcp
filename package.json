@@ -1,0 +1,17 @@
+{
+  "name": "emerald-ai-agentic-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Emerald AI agentic MCP server and deterministic report generator",
+  "scripts": {
+    "start": "node mcp-agentic.mjs",
+    "check": "node --check mcp-agentic.mjs"
+  },
+  "dependencies": {
+    "nodemailer": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

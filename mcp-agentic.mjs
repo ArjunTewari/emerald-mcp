@@ -21432,7 +21432,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { exec } from "node:child_process";
-import nodemailer from "nodemailer";
 import os from "node:os";
 var __dirname = path.dirname(fileURLToPath(import.meta.url));
 function resolveDesktop() {
@@ -22892,20 +22891,32 @@ Period: ${data.date_from} \u2014 ${data.date_to}
 Open with: open_report` }] };
   }
 );
+function loadOrgRegistry() {
+  let base = {};
+  try {
+    const registryPath = path.join(__dirname, "org-handles.json");
+    if (fs.existsSync(registryPath)) base = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+  } catch {
+  }
+  const overrides = loadConfig().ORG_HANDLES ?? {};
+  return { ...base, ...overrides };
+}
+server.tool(
+  "list_orgs",
+  "List the names of all configured organisations. Merges the tracked org-handles.json registry with local config.json overrides and removes duplicate names.",
+  {},
+  async () => {
+    const names = Object.keys(loadOrgRegistry()).sort((a, b) => a.localeCompare(b));
+    if (!names.length) return { content: [{ type: "text", text: "No organisations configured yet." }] };
+    return { content: [{ type: "text", text: `${names.length} organisations configured:\n\n${names.map((name, i) => `${i + 1}. ${name}`).join("\n")}` }] };
+  }
+);
 server.tool(
   "list_org_handles",
   "List all configured social media handles for every organisation. Merges org-handles.json (base) and config.json ORG_HANDLES (overrides).",
   {},
   async () => {
-    let base = {};
-    try {
-      const p = path.join(__dirname, "org-handles.json");
-      if (fs.existsSync(p)) base = JSON.parse(fs.readFileSync(p, "utf8"));
-    } catch {
-    }
-    const f = loadConfig();
-    const overrides = f.ORG_HANDLES ?? {};
-    const handles = { ...base, ...overrides };
+    const handles = loadOrgRegistry();
     const count = Object.keys(handles).length;
     if (!count) return { content: [{ type: "text", text: "No org handles configured yet. Use set_org_handles to add some." }] };
     const lines = Object.entries(handles).map(([org, h]) => {
@@ -23715,7 +23726,7 @@ function notifyReportSaved(htmlName, sizeKb, counts, orgs) {
     `\u2500\u2500 API Cost Breakdown \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`,
     textRows
   ].join("\n");
-  nodemailer.createTransport({
+  import("nodemailer").then(({ default: nodemailer }) => nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
     secure: false,
@@ -23727,7 +23738,7 @@ function notifyReportSaved(htmlName, sizeKb, counts, orgs) {
     subject: `Emerald AI \u2713 ${slug} \u2014 ${dateRange}`,
     text: bodyText,
     html: bodyHtml
-  }).then((info) => {
+  })).then((info) => {
     console.log(`[Email] Report notification sent \u2014 ${info.messageId}`);
   }).catch((e) => {
     console.warn(`[Email] Notification failed: ${e.message}`);

@@ -23,14 +23,20 @@ if ! command -v node &> /dev/null; then
 fi
 echo "✓ Node.js $(node --version)"
 
-# 2. Install SKILL.md into Claude Code skills folder
+# 2. Install runtime dependencies
+echo ""
+echo "→ Installing MCP runtime dependencies ..."
+npm install --omit=dev --prefix "$REPO_DIR"
+echo "✓ Runtime dependencies installed"
+
+# 3. Install SKILL.md into Claude Code skills folder
 echo ""
 echo "→ Installing SKILL.md to $SKILL_DIR ..."
 mkdir -p "$SKILL_DIR"
 cp "$REPO_DIR/SKILL.md" "$SKILL_DIR/SKILL.md"
 echo "✓ Skill installed"
 
-# 3. Create config.json if it doesn't exist
+# 4. Create config.json if it doesn't exist
 if [ ! -f "$REPO_DIR/config.json" ]; then
   cp "$REPO_DIR/config.json.example" "$REPO_DIR/config.json"
   echo ""
@@ -40,7 +46,7 @@ if [ ! -f "$REPO_DIR/config.json" ]; then
   echo ""
 fi
 
-# 4. Write Claude Desktop MCP config
+# 5. Write Claude Desktop MCP config
 echo "→ Configuring Claude Desktop ..."
 mkdir -p "$(dirname "$MCP_CONFIG")"
 

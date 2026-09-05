@@ -30,6 +30,8 @@ It returns the full HTML template, scoring formulas, canonical AEO questions,
 keyword lists, query formats, and section structure. Follow those instructions exactly.
 
 ### Step 2 — Collect data using only these MCP tools
+- `list_orgs` — list every configured organisation name
+- `list_org_handles` — list configured organisation names with social handles
 - `get_org_history` — past metrics per org (call for every org)
 - `search_news` — news/media coverage via Firecrawl
 - `search_web` — web fallback search
